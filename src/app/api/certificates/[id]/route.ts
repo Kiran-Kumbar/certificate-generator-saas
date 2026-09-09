@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { Certificate, CertificateSetup, Template, User } from "@/models";
-import { generateCertificateEngine } from "@/services/certificate-engine";
+import { generateCertificateEngine, getAppBaseUrl } from "@/services/certificate-engine";
 import { uploadToCloudinary } from "@/services/storage";
 import { verifyAuthToken } from "@/lib/auth";
 import { CertificateElement } from "@/types/template";
@@ -68,6 +68,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       }
 
       if (template) {
+        const baseUrl = getAppBaseUrl(req);
         const renderResult = await generateCertificateEngine({
           backgroundUrl: template.backgroundUrl,
           elements: template.elements as CertificateElement[],
@@ -78,6 +79,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
           certificateNumber: cert.certificateNumber,
           width: template.width,
           height: template.height,
+          baseUrl,
+          verificationToken: cert.verificationToken || undefined,
         });
 
         const year = new Date(cert.issuedAt || Date.now()).getFullYear();
@@ -97,6 +100,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
         cert.pdfUrl = pdfUpload.url;
         cert.pngUrl = pngUpload.url;
+        cert.verificationToken = renderResult.verificationToken;
+        cert.verificationCodeHash = renderResult.verificationCodeHash;
       }
     } catch (reErr) {
       console.warn("Could not re-render PDF/PNG during certificate update:", reErr);

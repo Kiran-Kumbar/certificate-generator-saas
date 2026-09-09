@@ -12,12 +12,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ code: st
       return NextResponse.json({ error: "Verification code required" }, { status: 400 });
     }
 
-    const verificationCodeHash = crypto.createHash("sha256").update(code).digest("hex");
+    const cleanCode = decodeURIComponent(code)
+      .trim()
+      .replace(/[\r\n\t\s]+/g, "")
+      .replace(/^\/?verify\//, "");
+
+    const verificationCodeHash = crypto.createHash("sha256").update(cleanCode).digest("hex");
     const certificate = await Certificate.findOne({
       $or: [
         { verificationCodeHash },
-        { verificationToken: code },
-        { certificateNumber: code },
+        { verificationToken: cleanCode },
+        { certificateNumber: cleanCode },
       ],
     })
       .populate("institutionId")

@@ -22,14 +22,23 @@ interface VerificationData {
 }
 
 export default function VerificationPage({ params }: { params: Promise<{ code: string }> }) {
-  const { code } = use(params);
+  const { code: rawCode } = use(params);
+  const code = (rawCode ? decodeURIComponent(rawCode) : "")
+    .trim()
+    .replace(/[\r\n\t\s]+/g, "")
+    .replace(/^\/?verify\//, "");
+
   const [data, setData] = useState<VerificationData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function verify() {
+      if (!code) {
+        setLoading(false);
+        return;
+      }
       try {
-        const res = await fetch(`/api/verification/${code}`);
+        const res = await fetch(`/api/verification/${encodeURIComponent(code)}`);
         const result = await res.json();
         setData(result);
       } catch (e) {

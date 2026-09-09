@@ -33,6 +33,36 @@ export interface GenerateEngineOptions {
   certificateNumber: string;
   width?: number;  // Default: 841.89 pt
   height?: number; // Default: 595.28 pt
+  baseUrl?: string; // App base URL for QR code verification link
+  verificationToken?: string; // Existing token if regenerating or editing
+}
+
+export function getAppBaseUrl(req?: Request, customUrl?: string): string {
+  if (customUrl && typeof customUrl === "string") {
+    const clean = customUrl.replace(/[\r\n\t\s]+/g, "").replace(/\/+$/, "");
+    if (clean) return clean;
+  }
+
+  if (req) {
+    try {
+      const proto = req.headers.get("x-forwarded-proto") || "https";
+      const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+      if (host) {
+        const cleanHost = host.replace(/[\r\n\t\s]+/g, "");
+        return `${proto}://${cleanHost}`.replace(/\/+$/, "");
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const rawEnv =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "") ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
+    "http://localhost:3000";
+
+  return rawEnv.replace(/[\r\n\t\s]+/g, "").replace(/\/+$/, "");
 }
 
 export async function generateCertificateEngine(
@@ -41,13 +71,20 @@ export async function generateCertificateEngine(
   const docWidth = options.width || 841.89;
   const docHeight = options.height || 595.28;
 
-  // 1. Generate Opaque Verification Secret & Token Hash
-  const verificationToken = crypto.randomBytes(16).toString("hex");
+  // 1. Generate or reuse Opaque Verification Secret & Token Hash
+  const verificationToken = (options.verificationToken || crypto.randomBytes(16).toString("hex"))
+    .trim()
+    .replace(/[\r\n\t\s]+/g, "");
   const verificationCodeHash = crypto.createHash("sha256").update(verificationToken).digest("hex");
 
-  // 2. Render QR Code Buffer
-  const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/verify/${verificationToken}`;
-  const qrBuffer = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 200 });
+  // 2. Render Clean, Single-Line QR Code Buffer (Guaranteed no embedded newlines or spaces)
+  const cleanBaseUrl = getAppBaseUrl(undefined, options.baseUrl);
+  const verifyUrl = `${cleanBaseUrl}/verify/${verificationToken}`;
+  const qrBuffer = await QRCode.toBuffer(verifyUrl, {
+    margin: 1,
+    width: 260,
+    errorCorrectionLevel: "M",
+  });
 
   // Register bundled fonts (no-op after first call)
   registerBundledFonts();
@@ -511,6 +548,7 @@ export async function generateCertificateEngine(
     certificateNumber: options.certificateNumber,
     verificationToken,
     verificationCodeHash,
+    verifyUrl,
     layout: {
       elements: elementLayouts,
       hasOverflow,

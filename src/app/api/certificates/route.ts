@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { Certificate, CertificateSetup, Template, Counter, User, CertificateBatch } from "@/models";
-import { generateCertificateEngine, formatCertificateDate } from "@/services/certificate-engine";
+import { generateCertificateEngine, formatCertificateDate, getAppBaseUrl } from "@/services/certificate-engine";
 import { uploadToCloudinary } from "@/services/storage";
 import { verifyAuthToken } from "@/lib/auth";
 import { CertificateElement } from "@/types/template";
@@ -106,6 +106,7 @@ export async function POST(req: Request) {
       certificateNumber,
       width: template.width,
       height: template.height,
+      baseUrl: getAppBaseUrl(req),
     });
 
     // 3. Upload Generated PDF & PNG to Storage

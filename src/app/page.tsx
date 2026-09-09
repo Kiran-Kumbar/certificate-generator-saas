@@ -19,37 +19,39 @@ export default function HomePage() {
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col selection:bg-sky-600 selection:text-white">
       {/* ─── NAVBAR ─── */}
       <header className="border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center p-1.5 shadow-xs shrink-0 group-hover:border-sky-300 transition-colors">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white border border-slate-200 rounded-lg sm:rounded-xl flex items-center justify-center p-1 sm:p-1.5 shadow-xs shrink-0 group-hover:border-sky-300 transition-colors">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/image.png" alt="Softmusk Logo" className="w-full h-full object-contain" />
             </div>
-            <div>
-              <span className="font-bold text-slate-900 text-base tracking-tight block">
+            <div className="min-w-0">
+              <span className="font-bold text-slate-900 text-sm sm:text-base tracking-tight block whitespace-nowrap truncate">
                 Softmusk CertSaaS
               </span>
-              <span className="text-[10px] text-sky-600 font-semibold tracking-wide uppercase block -mt-0.5">
+              <span className="text-[10px] text-sky-600 font-semibold tracking-wide uppercase hidden sm:block -mt-0.5 whitespace-nowrap">
                 Certificate Platform
               </span>
             </div>
           </Link>
 
           {/* Right Action Buttons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <Link
               href="/login"
-              className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-3.5 py-2 rounded-xl hover:bg-slate-100 transition-all"
+              className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl hover:bg-slate-100 transition-all whitespace-nowrap"
             >
               Sign In
             </Link>
             <Link
               href="/dashboard"
-              className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm shadow-sky-600/20 transition-all flex items-center gap-1.5 group cursor-pointer"
+              className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl shadow-sm shadow-sky-600/20 transition-all flex items-center gap-1 sm:gap-1.5 group cursor-pointer whitespace-nowrap"
             >
-              <span>Launch Dashboard</span>
-              <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+              <span>
+                <span className="hidden sm:inline">Launch </span>Dashboard
+              </span>
+              <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform shrink-0" />
             </Link>
           </div>
         </div>

@@ -97,6 +97,7 @@ export type CertificateRenderResult = {
   certificateNumber: string;
   verificationToken: string;
   verificationCodeHash: string;
+  verifyUrl?: string;
   layout: {
     elements: ElementLayoutResult[];
     hasOverflow: boolean;
