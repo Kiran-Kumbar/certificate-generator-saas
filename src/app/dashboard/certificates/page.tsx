@@ -24,6 +24,7 @@ import {
   QrCode,
   Search,
   Filter,
+  Trash2,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import OfficialStamp from "@/components/OfficialStamp";
@@ -502,6 +503,23 @@ export default function CertificatesPage() {
     }
   };
 
+  const handleDelete = async (certId: string, certNumber: string) => {
+    if (!confirm(`Permanently delete certificate ${certNumber}?\n\nThis will remove it from the database AND delete the PDF and PNG from Cloudinary storage.\n\nThis action CANNOT be undone.`)) return;
+    try {
+      const res = await fetch(`/api/certificates/${certId}/delete`, { method: "DELETE" });
+      if (res.ok) {
+        info(`Certificate ${certNumber} permanently deleted`, "Deleted");
+        fetchData();
+      } else {
+        const data = await res.json();
+        error(data.error || "Failed to delete certificate", "Delete Failed");
+      }
+    } catch (e) {
+      console.error(e);
+      error("Failed to delete certificate", "Network Error");
+    }
+  };
+
   const handleExport = async (mode: "zip" | "combined_pdf") => {
     if (selectedCertIds.length === 0) return;
     setExporting(true);
@@ -788,6 +806,15 @@ export default function CertificatesPage() {
                               Revoke
                             </button>
                           )}
+
+                          {/* Delete permanently */}
+                          <button
+                            onClick={() => handleDelete(cert._id, cert.certificateNumber)}
+                            title="Permanently delete certificate and all assets"
+                            className="bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 px-2 py-1 rounded-lg text-[11px] font-medium transition-colors"
+                          >
+                            <Trash2 size={12} />
+                          </button>
                         </td>
                       </tr>
                     );
