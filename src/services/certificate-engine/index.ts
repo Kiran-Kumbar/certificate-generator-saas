@@ -1,9 +1,45 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-import { createCanvas, loadImage } from "canvas";
+import { createCanvas, loadImage, registerFont } from "canvas";
 import QRCode from "qrcode";
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
+
+// Register bundled TTF fonts so canvas renders correctly on Linux (Vercel)
+let fontsRegistered = false;
+function registerBundledFonts() {
+  if (fontsRegistered) return;
+  const fontDir = path.join(process.cwd(), "public", "fonts");
+  const fontDefs = [
+    { file: "OpenSans-Regular.ttf",      family: "Open Sans",        weight: "400", style: "normal" },
+    { file: "OpenSans-Bold.ttf",         family: "Open Sans",        weight: "700", style: "normal" },
+    { file: "OpenSans-Italic.ttf",       family: "Open Sans",        weight: "400", style: "italic" },
+    { file: "OpenSans-BoldItalic.ttf",   family: "Open Sans",        weight: "700", style: "italic" },
+    { file: "PlayfairDisplay-Regular.ttf", family: "Playfair Display", weight: "400", style: "normal" },
+    { file: "PlayfairDisplay-Bold.ttf",  family: "Playfair Display", weight: "700", style: "normal" },
+    // Alias these same files under the common web-font names for compatibility
+    { file: "OpenSans-Regular.ttf",      family: "Helvetica",        weight: "400", style: "normal" },
+    { file: "OpenSans-Bold.ttf",         family: "Helvetica",        weight: "700", style: "normal" },
+    { file: "OpenSans-Italic.ttf",       family: "Helvetica",        weight: "400", style: "italic" },
+    { file: "OpenSans-BoldItalic.ttf",   family: "Helvetica",        weight: "700", style: "italic" },
+    { file: "PlayfairDisplay-Regular.ttf", family: "Times New Roman", weight: "400", style: "normal" },
+    { file: "PlayfairDisplay-Bold.ttf",  family: "Times New Roman",  weight: "700", style: "normal" },
+    { file: "PlayfairDisplay-Regular.ttf", family: "Georgia",         weight: "400", style: "normal" },
+    { file: "OpenSans-Regular.ttf",      family: "Arial",            weight: "400", style: "normal" },
+    { file: "OpenSans-Bold.ttf",         family: "Arial",            weight: "700", style: "normal" },
+  ];
+  for (const f of fontDefs) {
+    const fullPath = path.join(fontDir, f.file);
+    if (fs.existsSync(fullPath)) {
+      try {
+        registerFont(fullPath, { family: f.family, weight: f.weight, style: f.style });
+      } catch (e) {
+        console.warn(`Failed to register font ${f.family} ${f.weight} ${f.style}:`, e);
+      }
+    }
+  }
+  fontsRegistered = true;
+}
 import { CertificateElement, CertificateRenderResult, ElementLayoutResult } from "@/types/template";
 import { calculateSmartFit } from "./smart-fit";
 
@@ -45,6 +81,9 @@ export async function generateCertificateEngine(
   // 2. Render QR Code Buffer
   const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/verify/${verificationToken}`;
   const qrBuffer = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 200 });
+
+  // Register bundled fonts (no-op after first call)
+  registerBundledFonts();
 
   // 3. Prepare Canvas (for PNG raster rendering)
   const canvas = createCanvas(docWidth, docHeight);
