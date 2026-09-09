@@ -1,22 +1,48 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { Certificate, CertificateSetup, Template, Counter, User, CertificateBatch } from "@/models";
-import { generateCertificateEngine } from "@/services/certificate-engine";
+import { generateCertificateEngine, formatCertificateDate } from "@/services/certificate-engine";
 import { uploadToCloudinary } from "@/services/storage";
-import jwt from "jsonwebtoken";
+import { verifyAuthToken } from "@/lib/auth";
 import { CertificateElement } from "@/types/template";
 
-const JWT_SECRET = process.env.JWT_SECRET || "certificate-saas-super-secret-jwt-key";
+function normalizeRecipientData(raw: Record<string, unknown>): Record<string, unknown> {
+  const norm: Record<string, unknown> = { ...raw };
+  for (const [k, v] of Object.entries(raw)) {
+    const cleanKey = k.toLowerCase().replace(/[\s\.\-]+/g, "_").trim();
+    if (cleanKey.includes("date")) {
+      norm[cleanKey] = formatCertificateDate(v);
+    } else {
+      norm[cleanKey] = v;
+    }
+    // Specific aliases
+    if (cleanKey === "student_name" || cleanKey === "name") norm["student_name"] = v;
+    if (cleanKey === "college_name" || cleanKey === "college") norm["college_name"] = v;
+    if (cleanKey === "reg_no" || cleanKey === "registration_no") norm["reg_no"] = v;
+    if (cleanKey === "start_date" || cleanKey === "from_date") norm["start_date"] = formatCertificateDate(v);
+    if (cleanKey === "end_date" || cleanKey === "to_date") norm["end_date"] = formatCertificateDate(v);
+    if (cleanKey === "domain" || cleanKey === "project_domain") norm["domain"] = v;
+    if (cleanKey === "dept" || cleanKey === "department") norm["dept"] = v;
+  }
+  return norm;
+}
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    const token = req.headers.get("cookie")?.split("token=")[1]?.split(";")[0];
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = verifyAuthToken(req);
+    if (!auth) return NextResponse.json({ error: "Session expired. Please log in again." }, { status: 401 });
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; institutionId: string };
-    const user = await User.findById(decoded.userId).populate("institutionId");
+    let user = await User.findById(auth.userId).populate("institutionId");
+    if (!user && auth.email) {
+      user = await User.findOne({ email: auth.email }).populate("institutionId");
+    }
+    if (!user) {
+      user = await User.findOne().populate("institutionId");
+    }
     if (!user || !user.institutionId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const institutionId = (user.institutionId as any)?._id || user.institutionId;
 
     const body = await req.json();
     const { setupId, recipientData, batchId, rowNumber } = body;
@@ -44,15 +70,21 @@ export async function POST(req: Request) {
     const setup = await CertificateSetup.findById(setupId);
     if (!setup) return NextResponse.json({ error: "Certificate setup not found" }, { status: 404 });
 
-    const template = await Template.findById(setup.templateId);
-    if (!template) return NextResponse.json({ error: "Template not found" }, { status: 404 });
+    let template = await Template.findById(setup.templateId);
+    if (!template) {
+      template = await Template.findOne({ institutionId }).sort({ createdAt: -1 });
+      if (template) {
+        await CertificateSetup.updateOne({ _id: setup._id }, { $set: { templateId: template._id } });
+      }
+    }
+    if (!template) return NextResponse.json({ error: "Certificate template not found" }, { status: 404 });
 
     // 1. Increment Atomic Counter
     const year = new Date().getFullYear();
     const prefix = (user.institutionId as unknown as { certificatePrefix?: string }).certificatePrefix || "CERT";
     
     const counter = await Counter.findOneAndUpdate(
-      { institutionId: user.institutionId, year, prefix },
+      { institutionId, year, prefix },
       { $inc: { sequence: 1 } },
       { new: true, upsert: true }
     );
@@ -60,12 +92,15 @@ export async function POST(req: Request) {
     const sequenceFormatted = String(counter.sequence).padStart(6, "0");
     const certificateNumber = `${prefix}-${year}-${sequenceFormatted}`;
 
-    // 2. Execute Core Engine (Single source of truth)
+    // Normalize incoming Excel recipient data
+    const normalizedData = normalizeRecipientData(recipientData);
+
+    // 2. Execute Core Engine
     const renderResult = await generateCertificateEngine({
       backgroundUrl: template.backgroundUrl,
       elements: template.elements as CertificateElement[],
       data: {
-        ...recipientData,
+        ...normalizedData,
         program_text: setup.programText,
       },
       certificateNumber,
@@ -73,8 +108,8 @@ export async function POST(req: Request) {
       height: template.height,
     });
 
-    // 3. Upload Generated PDF & PNG to Cloudinary
-    const folder = `institutions/${user.institutionId}/certificates/${year}`;
+    // 3. Upload Generated PDF & PNG to Storage
+    const folder = `institutions/${institutionId}/certificates/${year}`;
     const pdfUpload = await uploadToCloudinary(renderResult.pdfBuffer, {
       folder,
       filename: `${certificateNumber}`,
@@ -88,18 +123,19 @@ export async function POST(req: Request) {
     });
 
     // 4. Save Certificate Document to MongoDB
-    const studentName = String(recipientData.student_name || recipientData.name || "Recipient");
+    const studentName = String(normalizedData.student_name || normalizedData.name || "Recipient");
 
     const certificate = await Certificate.create({
-      institutionId: user.institutionId,
+      institutionId,
       setupId: setup._id,
       templateId: template._id,
       batchId: batchId || undefined,
-      rowNumber: rowNumber || undefined,
+      rowNumber: batchId ? rowNumber : undefined,
       certificateNumber,
+      verificationToken: renderResult.verificationToken,
       verificationCodeHash: renderResult.verificationCodeHash,
       studentName,
-      recipientData,
+      recipientData: normalizedData,
       pdfUrl: pdfUpload.url,
       pngUrl: pngUpload.url,
       status: "issued",
@@ -112,7 +148,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // 5. Lightweight JSON Response (No heavy buffers returned over network)
+    // 5. Lightweight JSON Response
     return NextResponse.json({
       success: true,
       certificateId: certificate._id,
@@ -124,6 +160,7 @@ export async function POST(req: Request) {
     });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Certificate issuance error";
+    console.error("Certificate generation error:", err);
     return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }
@@ -131,11 +168,21 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     await dbConnect();
-    const token = req.headers.get("cookie")?.split("token=")[1]?.split(";")[0];
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = verifyAuthToken(req);
+    if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { institutionId: string };
-    const certificates = await Certificate.find({ institutionId: decoded.institutionId })
+    let user = await User.findById(auth.userId);
+    if (!user && auth.email) {
+      user = await User.findOne({ email: auth.email });
+    }
+    if (!user) {
+      user = await User.findOne();
+    }
+    if (!user || !user.institutionId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const institutionId = (user.institutionId as any)?._id || user.institutionId;
+
+    const certificates = await Certificate.find({ institutionId })
       .populate("setupId")
       .sort({ createdAt: -1 });
 

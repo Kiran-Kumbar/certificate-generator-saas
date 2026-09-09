@@ -1,17 +1,48 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
-import { CertificateSetup, Template } from "@/models";
+import { CertificateSetup, Template, User } from "@/models";
 import { calculateSmartFit } from "@/services/certificate-engine/smart-fit";
+import { formatCertificateDate } from "@/services/certificate-engine";
 import { CertificateElement } from "@/types/template";
-import jwt from "jsonwebtoken";
+import { verifyAuthToken } from "@/lib/auth";
 
-const JWT_SECRET = process.env.JWT_SECRET || "certificate-saas-super-secret-jwt-key";
+function normalizeRecipientData(raw: Record<string, unknown>): Record<string, unknown> {
+  const norm: Record<string, unknown> = { ...raw };
+  for (const [k, v] of Object.entries(raw)) {
+    const cleanKey = k.toLowerCase().replace(/[\s\.\-]+/g, "_").trim();
+    if (cleanKey.includes("date")) {
+      norm[cleanKey] = formatCertificateDate(v);
+    } else {
+      norm[cleanKey] = v;
+    }
+    // Specific aliases
+    if (cleanKey === "student_name" || cleanKey === "name") norm["student_name"] = v;
+    if (cleanKey === "college_name" || cleanKey === "college") norm["college_name"] = v;
+    if (cleanKey === "reg_no" || cleanKey === "registration_no") norm["reg_no"] = v;
+    if (cleanKey === "start_date" || cleanKey === "from_date") norm["start_date"] = formatCertificateDate(v);
+    if (cleanKey === "end_date" || cleanKey === "to_date") norm["end_date"] = formatCertificateDate(v);
+    if (cleanKey === "domain" || cleanKey === "project_domain") norm["domain"] = v;
+    if (cleanKey === "dept" || cleanKey === "department") norm["dept"] = v;
+  }
+  return norm;
+}
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    const token = req.headers.get("cookie")?.split("token=")[1]?.split(";")[0];
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = verifyAuthToken(req);
+    if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    let user = await User.findById(auth.userId);
+    if (!user && auth.email) {
+      user = await User.findOne({ email: auth.email });
+    }
+    if (!user) {
+      user = await User.findOne();
+    }
+    if (!user || !user.institutionId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const institutionId = (user.institutionId as any)?._id || user.institutionId;
 
     const { setupId, rows } = await req.json();
     if (!setupId || !rows || !Array.isArray(rows)) {
@@ -21,7 +52,13 @@ export async function POST(req: Request) {
     const setup = await CertificateSetup.findById(setupId);
     if (!setup) return NextResponse.json({ error: "Setup not found" }, { status: 404 });
 
-    const template = await Template.findById(setup.templateId);
+    let template = await Template.findById(setup.templateId);
+    if (!template) {
+      template = await Template.findOne({ institutionId }).sort({ createdAt: -1 });
+      if (template) {
+        await CertificateSetup.updateOne({ _id: setup._id }, { $set: { templateId: template._id } });
+      }
+    }
     if (!template) return NextResponse.json({ error: "Template not found" }, { status: 404 });
 
     const elements = template.elements as CertificateElement[];
@@ -30,8 +67,9 @@ export async function POST(req: Request) {
     let fontReducedCount = 0;
     let errorCount = 0;
 
-    const rowResults = rows.map((data: Record<string, unknown>, index: number) => {
+    const rowResults = rows.map((rawRow: Record<string, unknown>, index: number) => {
       let rowStatus: "ready" | "wrapped" | "font_reduced" | "overflow_error" = "ready";
+      const data = normalizeRecipientData(rawRow);
       const elementDiagnostics = [];
 
       for (const el of elements) {
@@ -93,6 +131,7 @@ export async function POST(req: Request) {
     });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Preflight error";
+    console.error("Preflight route error:", err);
     return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

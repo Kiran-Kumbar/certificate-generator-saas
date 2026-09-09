@@ -24,6 +24,9 @@ export function calculateSmartFit(text: string, options: MeasureOptions): SmartF
   const canvas = createCanvas(1000, 200);
   const ctx = canvas.getContext("2d");
 
+  // Normalize text: strip newlines and multiple whitespace
+  const cleanText = (text || "").replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim();
+
   let currentFontSize = options.fontSize;
   const minFontSize = options.minFontSize || 14;
   const maxLines = options.maxLines || 2;
@@ -35,11 +38,11 @@ export function calculateSmartFit(text: string, options: MeasureOptions): SmartF
   while (currentFontSize >= minFontSize) {
     ctx.font = `${options.fontWeight || 400} ${currentFontSize}px ${options.fontFamily || "Arial"}`;
 
-    const textWidth = ctx.measureText(text).width;
+    const textWidth = ctx.measureText(cleanText).width;
 
     // Fits in single line
     if (textWidth <= maxWidth) {
-      lines = [text];
+      lines = [cleanText];
       if (currentFontSize < options.fontSize) {
         actionTaken = "font_reduced";
       }
@@ -48,9 +51,9 @@ export function calculateSmartFit(text: string, options: MeasureOptions): SmartF
 
     // Attempt Word Wrap
     if (options.wordWrap) {
-      const words = text.split(" ");
+      const words = cleanText.split(" ").filter(Boolean);
       const tempLines: string[] = [];
-      let currentLine = words[0];
+      let currentLine = words[0] || "";
 
       for (let i = 1; i < words.length; i++) {
         const word = words[i];

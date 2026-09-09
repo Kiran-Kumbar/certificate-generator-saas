@@ -13,7 +13,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ code: st
     }
 
     const verificationCodeHash = crypto.createHash("sha256").update(code).digest("hex");
-    const certificate = await Certificate.findOne({ verificationCodeHash })
+    const certificate = await Certificate.findOne({
+      $or: [
+        { verificationCodeHash },
+        { verificationToken: code },
+        { certificateNumber: code },
+      ],
+    })
       .populate("institutionId")
       .populate("setupId");
 
@@ -29,8 +35,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ code: st
       certificateNumber: certificate.certificateNumber,
       studentName: certificate.studentName,
       issuedAt: certificate.issuedAt,
-      pdfUrl: certificate.pdfUrl,
-      pngUrl: certificate.pngUrl,
+      pdfUrl: certificate.pdfUrl?.startsWith("data:") ? `/api/certificates/${certificate._id}/pdf` : certificate.pdfUrl,
+      pngUrl: certificate.pngUrl?.startsWith("data:") ? `/api/certificates/${certificate._id}/png` : certificate.pngUrl,
       recipientData: certificate.recipientData,
       institution: {
         name: inst.name,

@@ -17,30 +17,39 @@ export async function POST(req: Request) {
 
     let user = await User.findOne({ email });
 
+    const defaultEmail = process.env.SUPER_ADMIN_EMAIL || "admin@softmusk.com";
+    const defaultPassword = process.env.SUPER_ADMIN_PASSWORD || "admin123";
+
     // Seed default Institution and Admin for immediate initial setup/login testing if DB is empty
-    if (!user && email === "admin@example.com" && password === "admin123") {
-      let inst = await Institution.findOne({ code: "DEMO" });
+    const isSeedAttempt =
+      (!user) &&
+      ((email === "admin@example.com" && password === "admin123") ||
+       (email === "admin@softmusk.com" && password === "admin123") ||
+       (email === defaultEmail && password === defaultPassword));
+
+    if (isSeedAttempt) {
+      let inst = await Institution.findOne();
       if (!inst) {
         inst = await Institution.create({
-          name: "Demo Institution",
-          code: "DEMO",
-          email: "admin@example.com",
-          certificatePrefix: "DEMO",
+          name: "Softmusk Info Pvt. Ltd.",
+          code: "SM",
+          email: email,
+          certificatePrefix: "SM",
         });
       }
 
-      const passwordHash = await bcrypt.hash("admin123", 10);
+      const passwordHash = await bcrypt.hash(password, 10);
       user = await User.create({
         institutionId: inst._id,
-        name: "Demo Admin",
-        email: "admin@example.com",
+        name: "Softmusk Admin",
+        email: email,
         passwordHash,
         role: "super_admin",
       });
     }
 
     // Ensure existing demo admin account has super_admin role if returning
-    if (user && user.email === "admin@example.com" && user.role !== "super_admin") {
+    if (user && (user.email === "admin@example.com" || user.email === "admin@softmusk.com" || user.email === defaultEmail) && user.role !== "super_admin") {
       user.role = "super_admin";
       await user.save();
     }

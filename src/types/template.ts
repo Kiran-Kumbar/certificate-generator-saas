@@ -12,23 +12,65 @@ export type SmartFitConfig = {
   wordWrap: boolean;
 };
 
+export type CertificateElementType =
+  | "text"
+  | "variable"
+  | "image"
+  | "signature"
+  | "stamp"
+  | "qr"
+  | "line"
+  | "shape"
+  | "badge";
+
+export type CertificateShapeType =
+  | "rectangle"
+  | "rounded"
+  | "circle"
+  | "badge"
+  | "seal"
+  | "star"
+  | "medal"
+  | "ribbon"
+  | "line"
+  | "double-line"
+  | "gold-divider"
+  | "dashed-line"
+  | "dotted-line"
+  | "corner-ornament";
+
+export type CertificateElementStyle = {
+  fontFamily: string;
+  fontSize: number;
+  fontWeight: number;
+  fontStyle?: "normal" | "italic";
+  textDecoration?: "none" | "underline";
+  textAlign: "left" | "center" | "right";
+  color: string;
+  lineHeight?: number;
+  letterSpacing?: number;
+  backgroundColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  borderStyle?: "solid" | "dashed" | "dotted" | "double";
+  borderRadius?: number;
+  opacity?: number;
+  shapeType?: CertificateShapeType;
+};
+
 export type CertificateElement = {
   id: string;
-  type: "text" | "variable" | "image" | "signature" | "stamp" | "qr";
+  type: CertificateElementType;
   position: Position;
   variableKey?: string;
   content?: string;
   assetId?: string;
   cloudinaryUrl?: string;
-  style?: {
-    fontFamily: string;
-    fontSize: number;
-    fontWeight: number;
-    textAlign: "left" | "center" | "right";
-    color: string;
-    lineHeight?: number;
-  };
+  style?: CertificateElementStyle;
   smartFit?: SmartFitConfig;
+  locked?: boolean;
+  hidden?: boolean;
+  rotation?: number;
 };
 
 export type CertificateDocument = {

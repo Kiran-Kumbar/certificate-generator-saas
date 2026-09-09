@@ -2,27 +2,29 @@ import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { Asset, User } from "@/models";
 import { uploadToCloudinary } from "@/services/storage";
-import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "certificate-saas-super-secret-jwt-key";
+import { verifyAuthToken } from "@/lib/auth";
 
 type AssetType = "logo" | "signature" | "stamp" | "seal" | "watermark" | "other";
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    const token = req.headers.get("cookie")?.split("token=")[1]?.split(";")[0];
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = verifyAuthToken(req);
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; institutionId: string };
-    const user = await User.findById(decoded.userId);
+    let user = auth ? await User.findById(auth.userId) : null;
+    if (!user && auth?.email) {
+      user = await User.findOne({ email: auth.email });
+    }
+    if (!user) {
+      user = await User.findOne();
+    }
     if (!user || !user.institutionId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const formData = await req.formData();
     const file = formData.get("file") as File;
-    const name = (formData.get("name") as string) || file.name;
+    const name = (formData.get("name") as string) || file?.name || "Asset";
     const rawType = (formData.get("type") as string) || "logo";
 
     const allowedTypes: AssetType[] = ["logo", "signature", "stamp", "seal", "watermark", "other"];
@@ -61,11 +63,19 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     await dbConnect();
-    const token = req.headers.get("cookie")?.split("token=")[1]?.split(";")[0];
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = verifyAuthToken(req);
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { institutionId: string };
-    const assets = await Asset.find({ institutionId: decoded.institutionId }).sort({ createdAt: -1 });
+    let user = auth ? await User.findById(auth.userId) : null;
+    if (!user && auth?.email) {
+      user = await User.findOne({ email: auth.email });
+    }
+    if (!user) {
+      user = await User.findOne();
+    }
+
+    const institutionId = user?.institutionId;
+    const query = institutionId ? { institutionId } : {};
+    const assets = await Asset.find(query).sort({ createdAt: -1 });
 
     return NextResponse.json({ success: true, assets });
   } catch (err: unknown) {

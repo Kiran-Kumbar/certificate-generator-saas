@@ -2,8 +2,26 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { createCanvas, loadImage } from "canvas";
 import QRCode from "qrcode";
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
 import { CertificateElement, CertificateRenderResult, ElementLayoutResult } from "@/types/template";
 import { calculateSmartFit } from "./smart-fit";
+
+function parseColorToRgb(hexColor?: string) {
+  if (!hexColor || !hexColor.startsWith("#")) return rgb(0, 0, 0);
+  let hex = hexColor.replace("#", "");
+  if (hex.length === 3) {
+    hex = hex.split("").map((c) => c + c).join("");
+  }
+  if (hex.length !== 6) return rgb(0, 0, 0);
+  const r = parseInt(hex.substring(0, 2), 16) / 255;
+  const g = parseInt(hex.substring(2, 4), 16) / 255;
+  const b = parseInt(hex.substring(4, 6), 16) / 255;
+  return rgb(r, g, b);
+}
+
+import { formatCertificateDate } from "@/lib/format-date";
+export { formatCertificateDate };
 
 export interface GenerateEngineOptions {
   backgroundUrl: string;
@@ -35,7 +53,12 @@ export async function generateCertificateEngine(
   // Load Background Image
   if (options.backgroundUrl) {
     try {
-      const bgImg = await loadImage(options.backgroundUrl);
+      let bgSource: string | Buffer = options.backgroundUrl;
+      if (options.backgroundUrl.startsWith("/")) {
+        const local = path.join(process.cwd(), "public", options.backgroundUrl.replace(/^\//, ""));
+        if (fs.existsSync(local)) bgSource = local;
+      }
+      const bgImg = await loadImage(bgSource);
       ctx.drawImage(bgImg, 0, 0, docWidth, docHeight);
     } catch (e) {
       console.warn("Failed to load background image for PNG rendering:", e);
@@ -52,6 +75,14 @@ export async function generateCertificateEngine(
   const page = pdfDoc.addPage([docWidth, docHeight]);
   const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const helveticaOblique = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+  const helveticaBoldOblique = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
+  const timesRoman = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const timesBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+  const timesItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
+  const timesBoldItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanBoldItalic);
+  const courierFont = await pdfDoc.embedFont(StandardFonts.Courier);
+  const courierBold = await pdfDoc.embedFont(StandardFonts.CourierBold);
 
   if (options.backgroundUrl) {
     try {
@@ -63,6 +94,14 @@ export async function generateCertificateEngine(
           embeddedBg = await pdfDoc.embedPng(bgBytes);
         } else {
           embeddedBg = await pdfDoc.embedJpg(bgBytes);
+        }
+      } else if (options.backgroundUrl.startsWith("/")) {
+        const localPath = path.join(process.cwd(), "public", options.backgroundUrl.replace(/^\//, ""));
+        if (fs.existsSync(localPath)) {
+          const bgBytes = fs.readFileSync(localPath);
+          embeddedBg = options.backgroundUrl.endsWith(".png")
+            ? await pdfDoc.embedPng(bgBytes)
+            : await pdfDoc.embedJpg(bgBytes);
         }
       } else {
         const bgImageBytes = await fetch(options.backgroundUrl).then((res) => res.arrayBuffer());
@@ -118,27 +157,71 @@ export async function generateCertificateEngine(
   let hasOverflow = false;
 
   // 5. Process Elements Pipeline
+  // Pre-normalize incoming data: format date values and alias fallbacks
+  const normalizedData: Record<string, unknown> = { ...options.data };
+  for (const [k, v] of Object.entries(options.data || {})) {
+    if (k.toLowerCase().includes("date")) {
+      normalizedData[k] = formatCertificateDate(v);
+    } else {
+      normalizedData[k] = v;
+    }
+  }
+
+  // Alias fallbacks for standard certificate fields
+  if (!normalizedData.student_name && normalizedData.name) {
+    normalizedData.student_name = normalizedData.name;
+  }
+  if (!normalizedData.college_name && normalizedData.college) {
+    normalizedData.college_name = normalizedData.college;
+  }
+  if (!normalizedData.reg_no && normalizedData.registration_no) {
+    normalizedData.reg_no = normalizedData.registration_no;
+  }
+  if (!normalizedData.domain && (normalizedData.project_domain || normalizedData.project)) {
+    normalizedData.domain = normalizedData.project_domain || normalizedData.project;
+  }
+  if (!normalizedData.dept && normalizedData.department) {
+    normalizedData.dept = normalizedData.department;
+  }
+
+  // Note: dept and college_name are kept separate — each resolves via its own {{}} placeholder
+
   for (const el of renderElements) {
+    if (el.hidden) continue;
     const { position } = el;
 
     if (el.type === "text" || el.type === "variable") {
-      let rawText = el.content || "";
+      let rawText = "";
 
-      // If variableKey is program_text or content is empty, check options.data.program_text
-      if (el.variableKey === "program_text" || (!rawText && options.data.program_text)) {
-        rawText = String(options.data.program_text || rawText);
-      } else if (el.type === "variable" && el.variableKey) {
-        rawText = String(options.data[el.variableKey] ?? rawText);
+      if (el.type === "variable" && el.variableKey) {
+        if (el.variableKey === "program_text") {
+          rawText = String(normalizedData.program_text || el.content || "");
+        } else {
+          const val = normalizedData[el.variableKey];
+          const rawVal = val !== undefined && val !== null ? String(val).trim() : (el.content || "");
+          rawText = rawVal;
+        }
+      } else {
+        rawText = el.content || "";
+        // Clean up legacy spaced ribbon title
+        if (rawText.replace(/\s+/g, "") === "THISISTOCERTIFYTHAT") {
+          rawText = "THIS IS TO CERTIFY THAT";
+        }
       }
 
-      // Replace all embedded mustache variables e.g. {{student_name}}, {{reg_no}}, {{college_name}}
+      // Replace mustache variables e.g. {{college_name}}, {{start_date}}, {{end_date}}, {{domain}}
       rawText = rawText.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key) => {
-        return String(options.data[key] ?? `{{${key}}}`);
+        const val = normalizedData[key];
+        return val !== undefined && val !== null && val !== "" ? String(val) : `{{${key}}}`;
       });
+
+      rawText = rawText.replace(/[\r\n]+/g, " ").replace(/[ \t]+/g, " ").trim();
 
       const fontSize = el.style?.fontSize || 24;
       const fontFamily = el.style?.fontFamily || "Helvetica";
       const fontWeight = el.style?.fontWeight || 400;
+      const isItalic = el.style?.fontStyle === "italic";
+      const hasUnderline = el.style?.textDecoration === "underline";
 
       const fitResult = calculateSmartFit(rawText, {
         fontSize,
@@ -162,7 +245,8 @@ export async function generateCertificateEngine(
       });
 
       // Render to Canvas (PNG)
-      ctx.font = `${fontWeight} ${fitResult.finalFontSize}px ${fontFamily}, sans-serif`;
+      const fontPrefix = isItalic ? "italic " : "";
+      ctx.font = `${fontPrefix}${fontWeight} ${fitResult.finalFontSize}px ${fontFamily}, sans-serif`;
       ctx.fillStyle = el.style?.color || "#000000";
       ctx.textAlign = (el.style?.textAlign as CanvasTextAlign) || "left";
 
@@ -172,13 +256,58 @@ export async function generateCertificateEngine(
       if (el.style?.textAlign === "right") startX = position.x + position.width;
 
       fitResult.lines.forEach((line, index) => {
-        ctx.fillText(line, startX, position.y + (index + 1) * lineHeight);
+        const cleanLine = (line || "").replace(/[\r\n]+/g, " ").trim();
+        if (cleanLine) {
+          const lineY = position.y + (index + 1) * lineHeight;
+          ctx.fillText(cleanLine, startX, lineY);
+
+          if (hasUnderline) {
+            const metrics = ctx.measureText(cleanLine);
+            let uX = startX;
+            if (el.style?.textAlign === "center") uX = startX - metrics.width / 2;
+            if (el.style?.textAlign === "right") uX = startX - metrics.width;
+            ctx.beginPath();
+            ctx.lineWidth = Math.max(1, fitResult.finalFontSize * 0.07);
+            ctx.strokeStyle = el.style?.color || "#000000";
+            ctx.moveTo(uX, lineY + 2);
+            ctx.lineTo(uX + metrics.width, lineY + 2);
+            ctx.stroke();
+          }
+        }
       });
 
       // Render to PDF
-      const pdfFont = fontWeight > 500 ? helveticaBold : helveticaFont;
+      const isTimes = fontFamily.toLowerCase().includes("times") || fontFamily.toLowerCase().includes("serif") || fontFamily.toLowerCase().includes("georgia") || fontFamily.toLowerCase().includes("playfair");
+      const isCourier = fontFamily.toLowerCase().includes("courier") || fontFamily.toLowerCase().includes("mono");
+      const isBold = fontWeight > 500;
+
+      let pdfFont = helveticaFont;
+      if (isTimes) {
+        if (isBold && isItalic) pdfFont = timesBoldItalic;
+        else if (isBold) pdfFont = timesBold;
+        else if (isItalic) pdfFont = timesItalic;
+        else pdfFont = timesRoman;
+      } else if (isCourier) {
+        pdfFont = isBold ? courierBold : courierFont;
+      } else {
+        if (isBold && isItalic) pdfFont = helveticaBoldOblique;
+        else if (isBold) pdfFont = helveticaBold;
+        else if (isItalic) pdfFont = helveticaOblique;
+        else pdfFont = helveticaFont;
+      }
+
+      const textColor = parseColorToRgb(el.style?.color);
+
       fitResult.lines.forEach((line, index) => {
-        const textWidth = pdfFont.widthOfTextAtSize(line, fitResult.finalFontSize);
+        const cleanLine = (line || "")
+          .replace(/[\r\n]+/g, " ")
+          .replace(/[\u201C\u201D]/g, '"')
+          .replace(/[\u2018\u2019]/g, "'")
+          .replace(/[\u2013\u2014]/g, "-")
+          .trim();
+        if (!cleanLine) return;
+
+        const textWidth = pdfFont.widthOfTextAtSize(cleanLine, fitResult.finalFontSize);
         let pdfX = position.x;
         if (el.style?.textAlign === "center") pdfX = position.x + (position.width - textWidth) / 2;
         if (el.style?.textAlign === "right") pdfX = position.x + position.width - textWidth;
@@ -186,14 +315,140 @@ export async function generateCertificateEngine(
         // pdf-lib origin is bottom-left
         const pdfY = docHeight - (position.y + (index + 1) * lineHeight);
 
-        page.drawText(line, {
+        page.drawText(cleanLine, {
           x: pdfX,
           y: pdfY,
           size: fitResult.finalFontSize,
           font: pdfFont,
-          color: rgb(0, 0, 0),
+          color: textColor,
         });
+
+        if (hasUnderline) {
+          page.drawLine({
+            start: { x: pdfX, y: pdfY - 2 },
+            end: { x: pdfX + textWidth, y: pdfY - 2 },
+            thickness: Math.max(0.75, fitResult.finalFontSize * 0.06),
+            color: textColor,
+          });
+        }
       });
+    } else if (el.type === "line") {
+      const shapeType = el.style?.shapeType || "line";
+      const lineColor = el.style?.color || el.style?.borderColor || "#c59b27";
+      const lineWidth = el.style?.borderWidth || 1.5;
+      const rgbColor = parseColorToRgb(lineColor);
+      const startX = position.x;
+      const endX = position.x + position.width;
+      const centerY = position.y + position.height / 2;
+
+      // Canvas rendering
+      ctx.save();
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = lineWidth;
+      if (shapeType === "dashed-line") ctx.setLineDash([6, 4]);
+      else if (shapeType === "dotted-line") ctx.setLineDash([2, 3]);
+
+      if (shapeType === "double-line") {
+        ctx.beginPath();
+        ctx.moveTo(startX, centerY - 2);
+        ctx.lineTo(endX, centerY - 2);
+        ctx.moveTo(startX, centerY + 2);
+        ctx.lineTo(endX, centerY + 2);
+        ctx.stroke();
+      } else if (shapeType === "gold-divider") {
+        // Line with center decorative diamond
+        const midX = startX + position.width / 2;
+        ctx.beginPath();
+        ctx.moveTo(startX, centerY);
+        ctx.lineTo(midX - 12, centerY);
+        ctx.moveTo(midX + 12, centerY);
+        ctx.lineTo(endX, centerY);
+        ctx.stroke();
+
+        // Draw diamond
+        ctx.fillStyle = lineColor;
+        ctx.beginPath();
+        ctx.moveTo(midX, centerY - 4);
+        ctx.lineTo(midX + 6, centerY);
+        ctx.moveTo(midX + 6, centerY);
+        ctx.lineTo(midX, centerY + 4);
+        ctx.lineTo(midX - 6, centerY);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(startX, centerY);
+        ctx.lineTo(endX, centerY);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // PDF rendering
+      const pdfY = docHeight - centerY;
+      if (shapeType === "double-line") {
+        page.drawLine({ start: { x: startX, y: pdfY + 2 }, end: { x: endX, y: pdfY + 2 }, thickness: lineWidth, color: rgbColor });
+        page.drawLine({ start: { x: startX, y: pdfY - 2 }, end: { x: endX, y: pdfY - 2 }, thickness: lineWidth, color: rgbColor });
+      } else if (shapeType === "gold-divider") {
+        const midX = startX + position.width / 2;
+        page.drawLine({ start: { x: startX, y: pdfY }, end: { x: midX - 12, y: pdfY }, thickness: lineWidth, color: rgbColor });
+        page.drawLine({ start: { x: midX + 12, y: pdfY }, end: { x: endX, y: pdfY }, thickness: lineWidth, color: rgbColor });
+        page.drawRectangle({ x: midX - 3, y: pdfY - 3, width: 6, height: 6, color: rgbColor });
+      } else {
+        page.drawLine({ start: { x: startX, y: pdfY }, end: { x: endX, y: pdfY }, thickness: lineWidth, color: rgbColor });
+      }
+    } else if (el.type === "shape") {
+      const shapeType = el.style?.shapeType || "rectangle";
+      const bgColor = el.style?.backgroundColor ? parseColorToRgb(el.style.backgroundColor) : undefined;
+      const bColor = el.style?.borderColor ? parseColorToRgb(el.style.borderColor) : undefined;
+      const bWidth = el.style?.borderWidth || 1;
+
+      // Canvas rendering
+      ctx.save();
+      if (el.style?.backgroundColor) {
+        ctx.fillStyle = el.style.backgroundColor;
+        if (shapeType === "circle") {
+          ctx.beginPath();
+          ctx.arc(position.x + position.width / 2, position.y + position.height / 2, Math.min(position.width, position.height) / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillRect(position.x, position.y, position.width, position.height);
+        }
+      }
+      if (el.style?.borderColor) {
+        ctx.strokeStyle = el.style.borderColor;
+        ctx.lineWidth = bWidth;
+        if (shapeType === "circle") {
+          ctx.beginPath();
+          ctx.arc(position.x + position.width / 2, position.y + position.height / 2, Math.min(position.width, position.height) / 2, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          ctx.strokeRect(position.x, position.y, position.width, position.height);
+        }
+      }
+      ctx.restore();
+
+      // PDF rendering
+      const pdfY = docHeight - position.y - position.height;
+      if (shapeType === "circle") {
+        page.drawCircle({
+          x: position.x + position.width / 2,
+          y: pdfY + position.height / 2,
+          size: Math.min(position.width, position.height) / 2,
+          color: bgColor,
+          borderColor: bColor,
+          borderWidth: bColor ? bWidth : 0,
+        });
+      } else {
+        page.drawRectangle({
+          x: position.x,
+          y: pdfY,
+          width: position.width,
+          height: position.height,
+          color: bgColor,
+          borderColor: bColor,
+          borderWidth: bColor ? bWidth : 0,
+        });
+      }
     } else if (el.type === "qr") {
       // Draw QR on Canvas
       try {

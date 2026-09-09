@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { Layout, Calendar, Layers, ExternalLink, Edit3, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface Template {
   _id: string;
@@ -46,14 +48,14 @@ export default function SavedDesignsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Saved Certificate Designs</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Saved Certificate Designs</h1>
+          <p className="text-sm text-slate-500 mt-1">
             Browse and manage all template designs saved in your workspace
           </p>
         </div>
         <Link
           href="/dashboard/templates"
-          className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-md shadow-indigo-600/20"
+          className="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 shadow-sm shadow-sky-600/20"
         >
           <Layout size={18} />
           Create New Design
@@ -61,47 +63,48 @@ export default function SavedDesignsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-20 text-slate-400 text-sm">
-          Loading saved designs...
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-72 w-full bg-slate-200/80 rounded-xl" />
+          <Skeleton className="h-72 w-full bg-slate-200/60 rounded-xl" />
+          <Skeleton className="h-72 w-full bg-slate-200/60 rounded-xl" />
         </div>
       ) : templates.length === 0 ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center">
-          <Layers size={48} className="mx-auto text-slate-600 mb-3" />
-          <h3 className="text-base font-semibold text-white">No Saved Designs Yet</h3>
-          <p className="text-sm text-slate-400 mt-1 mb-6">
-            Create your first visual certificate template in the Template Editor.
-          </p>
-          <Link
-            href="/dashboard/templates"
-            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
-          >
-            Go to Template Editor
-          </Link>
-        </div>
+        <EmptyState
+          icon={Layers}
+          title="No Saved Designs Yet"
+          description="Create your first visual certificate template with drag-and-drop elements in the Template Editor."
+          action={{
+            label: "Go to Template Editor",
+            onClick: () => {
+              if (typeof window !== "undefined") window.location.href = "/dashboard/templates";
+            },
+            icon: Layout,
+          }}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {templates.map((tmpl) => (
             <div
               key={tmpl._id}
-              className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg hover:border-slate-700 transition-all flex flex-col justify-between"
+              className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between"
             >
               {/* Preview Canvas Thumbnail */}
-              <div className="relative h-48 bg-slate-950 border-b border-slate-800 flex items-center justify-center p-2 overflow-hidden">
+              <div className="relative h-48 bg-slate-100 border-b border-slate-200 flex items-center justify-center p-3 overflow-hidden">
                 {tmpl.backgroundUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={tmpl.backgroundUrl}
                     alt={tmpl.name}
-                    className="w-full h-full object-contain rounded"
+                    className="w-full h-full object-contain rounded bg-white shadow-xs"
                   />
                 ) : (
-                  <div className="text-slate-600 flex flex-col items-center gap-1">
+                  <div className="text-slate-400 flex flex-col items-center gap-1">
                     <Layout size={32} />
                     <span className="text-xs">No Preview</span>
                   </div>
                 )}
 
-                <div className="absolute top-3 right-3 bg-slate-900/90 text-indigo-400 text-[10px] font-mono px-2 py-0.5 rounded border border-slate-700 backdrop-blur-sm">
+                <div className="absolute top-3 right-3 bg-white/95 text-sky-700 text-[10px] font-mono px-2 py-0.5 rounded border border-slate-200 shadow-xs backdrop-blur-sm">
                   {tmpl.elements?.length || 0} Elements
                 </div>
               </div>
@@ -109,8 +112,8 @@ export default function SavedDesignsPage() {
               {/* Template Info Body */}
               <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 className="font-semibold text-white text-base truncate">{tmpl.name}</h3>
-                  <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                  <h3 className="font-semibold text-slate-900 text-base truncate">{tmpl.name}</h3>
+                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                     <Calendar size={13} />
                     <span>
                       Saved on {new Date(tmpl.createdAt || Date.now()).toLocaleDateString()}
@@ -122,17 +125,17 @@ export default function SavedDesignsPage() {
                   {tmpl.elements?.map((el, i) => (
                     <span
                       key={i}
-                      className="bg-slate-800 text-slate-300 text-[10px] font-medium px-2 py-0.5 rounded border border-slate-700"
+                      className="bg-slate-100 text-slate-700 text-[10px] font-medium px-2 py-0.5 rounded border border-slate-200"
                     >
                       {el.type === "variable" ? `{{${el.variableKey || "var"}}}` : el.type}
                     </span>
                   ))}
                 </div>
 
-                <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
+                <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
                   <Link
                     href="/dashboard/templates"
-                    className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 transition-colors"
+                    className="text-xs text-sky-600 hover:text-sky-700 font-medium flex items-center gap-1 transition-colors"
                   >
                     <Edit3 size={14} />
                     Edit in Canvas
@@ -140,7 +143,7 @@ export default function SavedDesignsPage() {
 
                   <Link
                     href="/dashboard/setups"
-                    className="text-xs text-slate-400 hover:text-white font-medium flex items-center gap-1 transition-colors"
+                    className="text-xs text-slate-500 hover:text-slate-800 font-medium flex items-center gap-1 transition-colors"
                   >
                     Use in Setup
                     <ExternalLink size={13} />

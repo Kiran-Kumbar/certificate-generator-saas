@@ -236,6 +236,7 @@ export interface ICertificate extends Document {
   batchId?: mongoose.Types.ObjectId;
   rowNumber?: number;
   certificateNumber: string;
+  verificationToken?: string;
   verificationCodeHash: string;
   studentName: string;
   recipientData: Record<string, unknown>;
@@ -244,6 +245,8 @@ export interface ICertificate extends Document {
   folderId?: mongoose.Types.ObjectId;
   status: "draft" | "issued" | "revoked";
   issuedAt: Date;
+  lastEmailedTo?: string;
+  lastEmailedAt?: Date;
 }
 
 const CertificateSchema = new Schema<ICertificate>(
@@ -254,6 +257,7 @@ const CertificateSchema = new Schema<ICertificate>(
     batchId: { type: Schema.Types.ObjectId, ref: "CertificateBatch", index: true },
     rowNumber: { type: Number },
     certificateNumber: { type: String, required: true },
+    verificationToken: { type: String, index: true },
     verificationCodeHash: { type: String, required: true, index: true },
     studentName: { type: String, required: true, index: true },
     recipientData: { type: Schema.Types.Mixed, required: true },
@@ -262,12 +266,24 @@ const CertificateSchema = new Schema<ICertificate>(
     folderId: { type: Schema.Types.ObjectId, ref: "Folder" },
     status: { type: String, enum: ["draft", "issued", "revoked"], default: "issued" },
     issuedAt: { type: Date, default: Date.now },
+    lastEmailedTo: { type: String },
+    lastEmailedAt: { type: Date },
   },
   { timestamps: true }
 );
 
 CertificateSchema.index({ institutionId: 1, certificateNumber: 1 }, { unique: true });
-CertificateSchema.index({ batchId: 1, rowNumber: 1 }, { unique: true, sparse: true });
+CertificateSchema.index(
+  { batchId: 1, rowNumber: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { batchId: { $exists: true, $type: "objectId" } },
+  }
+);
+
+if (process.env.NODE_ENV === "development" && mongoose.models.Certificate) {
+  delete (mongoose.models as Record<string, unknown>).Certificate;
+}
 
 export const Certificate: Model<ICertificate> =
   mongoose.models.Certificate || mongoose.model<ICertificate>("Certificate", CertificateSchema);
