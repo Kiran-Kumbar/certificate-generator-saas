@@ -25,6 +25,7 @@ import {
   Search,
   Filter,
   Trash2,
+  Edit3,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import OfficialStamp from "@/components/OfficialStamp";
@@ -84,6 +85,12 @@ interface PreflightSummary {
 interface PreflightRow {
   rowNumber: number;
   studentName: string;
+  regNo?: string;
+  collegeName?: string;
+  dept?: string;
+  domain?: string;
+  startDate?: string;
+  endDate?: string;
   data: Record<string, unknown>;
   status: "ready" | "wrapped" | "font_reduced" | "overflow_error";
 }
@@ -132,6 +139,30 @@ export default function CertificatesPage() {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailFeedback, setEmailFeedback] = useState<string | null>(null);
   const [copiedCertId, setCopiedCertId] = useState<string | null>(null);
+
+  // Edit Certificate Modal State
+  const [editCert, setEditCert] = useState<CertificateItem | null>(null);
+  const [editFormData, setEditFormData] = useState<Record<string, string>>({});
+  const [editSaving, setEditSaving] = useState(false);
+
+  // Edit Preflight Row Modal State
+  const [editPreflightIndex, setEditPreflightIndex] = useState<number | null>(null);
+  const [editPreflightRowData, setEditPreflightRowData] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (editCert) {
+      setEditFormData({
+        student_name: editCert.studentName || String(editCert.recipientData?.student_name || ""),
+        reg_no: String(editCert.recipientData?.reg_no || ""),
+        college_name: String(editCert.recipientData?.college_name || ""),
+        dept: String(editCert.recipientData?.dept || ""),
+        domain: String(editCert.recipientData?.domain || ""),
+        start_date: String(editCert.recipientData?.start_date || ""),
+        end_date: String(editCert.recipientData?.end_date || ""),
+        status: editCert.status || "issued",
+      });
+    }
+  }, [editCert]);
 
   const fetchData = async () => {
     setLoadingData(true);
@@ -520,6 +551,85 @@ export default function CertificatesPage() {
     }
   };
 
+  const handleSaveEditCertificate = async () => {
+    if (!editCert) return;
+    setEditSaving(true);
+    try {
+      const res = await fetch(`/api/certificates/${editCert._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentName: editFormData.student_name,
+          status: editFormData.status,
+          recipientData: editFormData,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.certificate) {
+        setCertificates((prev) =>
+          prev.map((c) => (c._id === editCert._id ? { ...c, ...data.certificate } : c))
+        );
+        success(`Certificate ${editCert.certificateNumber} updated successfully!`, "Updated");
+        setEditCert(null);
+      } else {
+        error(data.error || "Failed to update certificate", "Update Failed");
+      }
+    } catch (err) {
+      error(err instanceof Error ? err.message : "Error saving certificate", "Network Error");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const handleStartEditPreflightRow = (index: number) => {
+    const row = preflightRows[index];
+    if (!row) return;
+    setEditPreflightIndex(index);
+    setEditPreflightRowData({
+      student_name: row.studentName,
+      reg_no: row.regNo || "",
+      college_name: row.collegeName || "",
+      dept: row.dept || "",
+      domain: row.domain || "",
+      start_date: row.startDate || "",
+      end_date: row.endDate || "",
+    });
+  };
+
+  const handleSavePreflightRow = () => {
+    if (editPreflightIndex === null) return;
+    const updatedExcel = [...excelRows];
+    updatedExcel[editPreflightIndex] = {
+      ...updatedExcel[editPreflightIndex],
+      ...editPreflightRowData,
+      "STUDENT NAME": editPreflightRowData.student_name,
+      "REG.NO": editPreflightRowData.reg_no,
+      "COLLEGE NAME": editPreflightRowData.college_name,
+      "DEPT": editPreflightRowData.dept,
+      "DOMAIN": editPreflightRowData.domain,
+      "START DATE": editPreflightRowData.start_date,
+      "END DATE": editPreflightRowData.end_date,
+    };
+    setExcelRows(updatedExcel);
+
+    const updatedPreflight = [...preflightRows];
+    const target = updatedPreflight[editPreflightIndex];
+    if (target) {
+      target.studentName = editPreflightRowData.student_name || target.studentName;
+      target.regNo = editPreflightRowData.reg_no;
+      target.collegeName = editPreflightRowData.college_name;
+      target.dept = editPreflightRowData.dept;
+      target.domain = editPreflightRowData.domain;
+      target.startDate = editPreflightRowData.start_date;
+      target.endDate = editPreflightRowData.end_date;
+      target.data = { ...target.data, ...editPreflightRowData };
+      target.status = "ready";
+    }
+    setPreflightRows(updatedPreflight);
+    setEditPreflightIndex(null);
+    success(`Row #${editPreflightIndex + 1} updated!`, "Row Updated");
+  };
+
   const handleExport = async (mode: "zip" | "combined_pdf") => {
     if (selectedCertIds.length === 0) return;
     setExporting(true);
@@ -783,6 +893,15 @@ export default function CertificatesPage() {
                             className="bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 px-2.5 py-1 rounded-lg text-[11px] font-medium inline-flex items-center gap-1 border border-slate-200 shadow-xs transition-colors"
                           >
                             <Eye size={12} className="text-sky-600" /> Inspect
+                          </button>
+
+                          {/* Edit Certificate Details */}
+                          <button
+                            onClick={() => setEditCert(cert)}
+                            title="Edit Certificate Details"
+                            className="bg-white hover:bg-sky-50 text-slate-700 hover:text-sky-700 px-2.5 py-1 rounded-lg text-[11px] font-medium inline-flex items-center gap-1 border border-slate-200 hover:border-sky-300 shadow-xs transition-colors"
+                          >
+                            <Edit3 size={12} className="text-sky-600" /> Edit
                           </button>
 
                           {/* Email Certificate - hidden */}
@@ -1209,7 +1328,7 @@ export default function CertificatesPage() {
 
                   <button
                     onClick={() => handleBulkGenerate(false)}
-                    disabled={bulkGenerating || preflightSummary?.errors! > 0}
+                    disabled={bulkGenerating || excelRows.length === 0}
                     className="bg-sky-600 hover:bg-sky-500 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm shadow-sky-600/20 disabled:opacity-50 cursor-pointer"
                   >
                     {bulkGenerating ? `Generating... (${bulkProgress}%)` : `Generate ${excelRows.length} Certificates`}
@@ -1223,25 +1342,47 @@ export default function CertificatesPage() {
                 </div>
               )}
 
-              <div className="max-h-72 overflow-y-auto border border-slate-200 rounded-lg">
-                <table className="w-full text-left text-xs text-slate-700">
-                  <thead className="bg-slate-50 text-slate-600 font-semibold uppercase border-b border-slate-200 sticky top-0">
+              <div className="max-h-96 overflow-y-auto border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
+                <table className="w-full text-left text-xs text-slate-700 min-w-[760px]">
+                  <thead className="bg-slate-50 text-slate-600 font-semibold uppercase border-b border-slate-200 sticky top-0 z-10 text-[11px]">
                     <tr>
-                      <th className="p-2.5 w-12">Row</th>
-                      <th className="p-2.5">Student Name</th>
-                      <th className="p-2.5">Layout Preflight Status</th>
+                      <th className="p-3 w-12 text-center">Row</th>
+                      <th className="p-3">Student Name</th>
+                      <th className="p-3">Reg. No</th>
+                      <th className="p-3">College</th>
+                      <th className="p-3">Department</th>
+                      <th className="p-3">Domain</th>
+                      <th className="p-3">Period</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
-                    {preflightRows.map((row) => (
-                      <tr key={row.rowNumber} className="hover:bg-slate-50/70">
-                        <td className="p-2.5 font-mono text-slate-500">{row.rowNumber}</td>
-                        <td className="p-2.5 font-semibold text-slate-900">{row.studentName}</td>
-                        <td className="p-2.5">
-                          {row.status === "ready" && <span className="text-emerald-700 font-semibold">✅ Fits Normatively</span>}
-                          {row.status === "wrapped" && <span className="text-amber-700 font-semibold">⚠ Wraps to 2 Lines</span>}
-                          {row.status === "font_reduced" && <span className="text-sky-700 font-semibold">ℹ Font Size Scaled Down</span>}
-                          {row.status === "overflow_error" && <span className="text-red-700 font-semibold">❌ Cannot Fit within Bounds</span>}
+                    {preflightRows.map((row, idx) => (
+                      <tr key={row.rowNumber} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="p-3 text-center font-mono text-slate-400">{row.rowNumber}</td>
+                        <td className="p-3 font-semibold text-slate-900 whitespace-nowrap">{row.studentName}</td>
+                        <td className="p-3 font-mono text-slate-600 whitespace-nowrap">{row.regNo || "—"}</td>
+                        <td className="p-3 text-slate-600 max-w-[170px] truncate" title={row.collegeName}>{row.collegeName || "—"}</td>
+                        <td className="p-3 text-slate-600 max-w-[130px] truncate" title={row.dept}>{row.dept || "—"}</td>
+                        <td className="p-3 text-slate-700 max-w-[150px] truncate" title={row.domain}>{row.domain || "—"}</td>
+                        <td className="p-3 text-slate-500 whitespace-nowrap text-[11px]">
+                          {row.startDate && row.endDate ? `${row.startDate} → ${row.endDate}` : (row.startDate || row.endDate || "—")}
+                        </td>
+                        <td className="p-3 whitespace-nowrap">
+                          {row.status === "ready" && <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[10px]">✅ Fits Perfectly</span>}
+                          {row.status === "wrapped" && <span className="inline-flex items-center gap-1 text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-[10px]">⚠ Auto-Wrapped</span>}
+                          {row.status === "font_reduced" && <span className="inline-flex items-center gap-1 text-sky-700 font-semibold bg-sky-50 px-2 py-0.5 rounded border border-sky-200 text-[10px]">ℹ Scaled Font</span>}
+                          {row.status === "overflow_error" && <span className="inline-flex items-center gap-1 text-slate-700 font-semibold bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-[10px]">ℹ Auto-Fitted</span>}
+                        </td>
+                        <td className="p-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditPreflightRow(idx)}
+                            className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-2.5 py-1 rounded text-[11px] font-medium inline-flex items-center gap-1 shadow-xs transition-colors"
+                          >
+                            <Edit3 size={11} className="text-sky-600" /> Edit
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -1506,6 +1647,255 @@ export default function CertificatesPage() {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: EDIT CERTIFICATE (FROM ARCHIVE TABLE) ─── */}
+      {editCert && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-5 border-b border-slate-200 bg-slate-50/80">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center">
+                  <Edit3 size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">Edit Certificate</h3>
+                  <p className="text-xs font-mono text-sky-600 font-medium">{editCert.certificateNumber}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditCert(null)}
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSaveEditCertificate();
+              }}
+              className="flex-1 overflow-y-auto p-6 space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Student Full Name</label>
+                <input
+                  type="text"
+                  value={editFormData.student_name || ""}
+                  onChange={(e) => setEditFormData({ ...editFormData, student_name: e.target.value })}
+                  required
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Registration Number</label>
+                  <input
+                    type="text"
+                    value={editFormData.reg_no || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, reg_no: e.target.value })}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Department</label>
+                  <input
+                    type="text"
+                    value={editFormData.dept || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, dept: e.target.value })}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">College / Institution</label>
+                <input
+                  type="text"
+                  value={editFormData.college_name || ""}
+                  onChange={(e) => setEditFormData({ ...editFormData, college_name: e.target.value })}
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Project / Domain</label>
+                <input
+                  type="text"
+                  value={editFormData.domain || ""}
+                  onChange={(e) => setEditFormData({ ...editFormData, domain: e.target.value })}
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Start Date</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 25-May-2026"
+                    value={editFormData.start_date || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, start_date: e.target.value })}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">End Date</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 14-Aug-2026"
+                    value={editFormData.end_date || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, end_date: e.target.value })}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Certificate Status</label>
+                <select
+                  value={editFormData.status || "issued"}
+                  onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 cursor-pointer"
+                >
+                  <option value="issued">ISSUED (Active & Valid)</option>
+                  <option value="revoked">REVOKED (Invalidated)</option>
+                </select>
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditCert(null)}
+                  disabled={editSaving}
+                  className="px-4 py-2 border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSaving}
+                  className="bg-sky-600 hover:bg-sky-500 text-white px-5 py-2 text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                >
+                  {editSaving ? "Saving & Re-rendering..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: EDIT PREFLIGHT ROW (BEFORE GENERATION) ─── */}
+      {editPreflightIndex !== null && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-5 border-b border-slate-200 bg-slate-50">
+              <div className="flex items-center gap-2.5">
+                <FileSpreadsheet className="text-sky-600" size={20} />
+                <h3 className="font-bold text-slate-900 text-sm">Edit Excel Row #{editPreflightIndex + 1}</h3>
+              </div>
+              <button
+                onClick={() => setEditPreflightIndex(null)}
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSavePreflightRow();
+              }}
+              className="p-6 space-y-3 overflow-y-auto"
+            >
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Student Name</label>
+                <input
+                  type="text"
+                  value={editPreflightRowData.student_name || ""}
+                  onChange={(e) => setEditPreflightRowData({ ...editPreflightRowData, student_name: e.target.value })}
+                  required
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Registration No</label>
+                  <input
+                    type="text"
+                    value={editPreflightRowData.reg_no || ""}
+                    onChange={(e) => setEditPreflightRowData({ ...editPreflightRowData, reg_no: e.target.value })}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Department</label>
+                  <input
+                    type="text"
+                    value={editPreflightRowData.dept || ""}
+                    onChange={(e) => setEditPreflightRowData({ ...editPreflightRowData, dept: e.target.value })}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">College Name</label>
+                <input
+                  type="text"
+                  value={editPreflightRowData.college_name || ""}
+                  onChange={(e) => setEditPreflightRowData({ ...editPreflightRowData, college_name: e.target.value })}
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Project / Domain</label>
+                <input
+                  type="text"
+                  value={editPreflightRowData.domain || ""}
+                  onChange={(e) => setEditPreflightRowData({ ...editPreflightRowData, domain: e.target.value })}
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Start Date</label>
+                  <input
+                    type="text"
+                    value={editPreflightRowData.start_date || ""}
+                    onChange={(e) => setEditPreflightRowData({ ...editPreflightRowData, start_date: e.target.value })}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">End Date</label>
+                  <input
+                    type="text"
+                    value={editPreflightRowData.end_date || ""}
+                    onChange={(e) => setEditPreflightRowData({ ...editPreflightRowData, end_date: e.target.value })}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+              <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditPreflightIndex(null)}
+                  className="px-3.5 py-1.5 border border-slate-300 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-sky-600 hover:bg-sky-500 text-white px-4 py-1.5 text-xs font-semibold rounded-lg shadow-sm"
+                >
+                  Update Row
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
