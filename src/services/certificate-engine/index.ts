@@ -26,6 +26,59 @@ function parseColorToRgb(hexColor?: string) {
 import { formatCertificateDate } from "@/lib/format-date";
 export { formatCertificateDate };
 
+export interface TextSegment {
+  text: string;
+  color: string;
+  bold: boolean;
+}
+
+export function parseFormattedSegments(
+  raw: string,
+  defaultColor: string,
+  defaultBold: boolean
+): TextSegment[] {
+  const segments: TextSegment[] = [];
+  const regex = /<(blue|b|gold)>(.*?)<\/\1>|([^<]+)/g;
+  let match;
+
+  while ((match = regex.exec(raw)) !== null) {
+    if (match[3]) {
+      segments.push({
+        text: match[3],
+        color: defaultColor,
+        bold: defaultBold,
+      });
+    } else {
+      const tag = match[1];
+      const inner = match[2];
+      let color = defaultColor;
+      let bold = defaultBold;
+
+      if (tag === "blue") {
+        color = "#03046e"; // Reference deep royal blue
+        bold = true;
+      } else if (tag === "gold") {
+        color = "#c59b27";
+        bold = true;
+      } else if (tag === "b") {
+        bold = true;
+      }
+
+      if (inner.includes("<")) {
+        segments.push(...parseFormattedSegments(inner, color, bold));
+      } else {
+        segments.push({ text: inner, color, bold });
+      }
+    }
+  }
+
+  if (segments.length === 0 && raw) {
+    segments.push({ text: raw, color: defaultColor, bold: defaultBold });
+  }
+
+  return segments;
+}
+
 export interface GenerateEngineOptions {
   backgroundUrl: string;
   elements: CertificateElement[];
@@ -263,10 +316,9 @@ export async function generateCertificateEngine(
       });
 
       rawText = rawText
-        .replace(/[\r\n]+/g, " ")
+        .replace(/[ \t]+/g, " ")
         .replace(/,\s*,/g, ",")
         .replace(/,\s*\./g, ".")
-        .replace(/[ \t]+/g, " ")
         .trim();
 
       const fontSize = el.style?.fontSize || 24;
@@ -274,26 +326,67 @@ export async function generateCertificateEngine(
       const fontWeight = el.style?.fontWeight || 400;
       const isItalic = el.style?.fontStyle === "italic";
       const hasUnderline = el.style?.textDecoration === "underline";
+      const isTimes = fontFamily.toLowerCase().includes("times") || fontFamily.toLowerCase().includes("serif") || fontFamily.toLowerCase().includes("georgia") || fontFamily.toLowerCase().includes("playfair");
+      const isCourier = fontFamily.toLowerCase().includes("courier") || fontFamily.toLowerCase().includes("mono");
+      const isBold = fontWeight > 500;
 
-      const fitResult = calculateSmartFit(rawText, {
-        fontSize,
-        fontFamily,
-        fontWeight,
-        maxWidth: position.width,
-        maxLines: el.smartFit?.maxLines || 2,
-        minFontSize: el.smartFit?.minFontSize || 14,
-        wordWrap: el.smartFit?.wordWrap ?? true,
-      });
+      const explicitLines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
 
-      if (fitResult.hasOverflow) hasOverflow = true;
+      let finalFontSize = fontSize;
+      let linesToRender: string[] = [];
+
+      if (explicitLines.length > 1) {
+        linesToRender = explicitLines;
+        finalFontSize = fontSize;
+
+        const fontPrefix = isItalic ? "italic " : "";
+        let canvasFamily = '"Times New Roman", Times, "Playfair Display"';
+        let genericFallback = "serif";
+        if (!isTimes) {
+          canvasFamily = isCourier ? "Courier" : '"Open Sans"';
+          genericFallback = isCourier ? "monospace" : "sans-serif";
+        }
+
+        let maxLineWidth = 0;
+        for (const line of linesToRender) {
+          const segs = parseFormattedSegments(line, el.style?.color || "#000000", isBold);
+          let w = 0;
+          for (const s of segs) {
+            const segWeight = s.bold ? "bold" : (isBold ? "bold" : "normal");
+            ctx.font = `${fontPrefix}${segWeight} ${finalFontSize}px ${canvasFamily}, ${genericFallback}`;
+            w += ctx.measureText(s.text).width;
+          }
+          if (w > maxLineWidth) maxLineWidth = w;
+        }
+
+        if (maxLineWidth > position.width && maxLineWidth > 0) {
+          const scale = position.width / maxLineWidth;
+          finalFontSize = Math.max(el.smartFit?.minFontSize || 9.5, Math.floor(finalFontSize * scale * 10) / 10);
+        }
+      } else {
+        const cleanForFit = rawText.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+        const fitResult = calculateSmartFit(cleanForFit, {
+          fontSize,
+          fontFamily,
+          fontWeight,
+          maxWidth: position.width,
+          maxLines: el.smartFit?.maxLines || 2,
+          minFontSize: el.smartFit?.minFontSize || 14,
+          wordWrap: el.smartFit?.wordWrap ?? true,
+        });
+
+        if (fitResult.hasOverflow) hasOverflow = true;
+        finalFontSize = fitResult.finalFontSize;
+        linesToRender = fitResult.lines.length > 1 ? fitResult.lines : [rawText];
+      }
 
       elementLayouts.push({
         id: el.id,
-        resolvedContent: rawText,
-        fontSize: fitResult.finalFontSize,
-        lines: fitResult.lines,
-        overflow: fitResult.hasOverflow,
-        actionTaken: fitResult.actionTaken,
+        resolvedContent: rawText.replace(/<[^>]+>/g, ""),
+        fontSize: finalFontSize,
+        lines: linesToRender.map((l) => l.replace(/<[^>]+>/g, "")),
+        overflow: false,
+        actionTaken: "none",
       });
 
       // Render to Canvas (PNG)
@@ -301,101 +394,120 @@ export async function generateCertificateEngine(
       const lowerFamily = fontFamily.toLowerCase();
       let canvasFamily = '"Open Sans"';
       let genericFallback = "sans-serif";
-      if (lowerFamily.includes("times") || lowerFamily.includes("serif")) {
-        canvasFamily = "Times";
+      if (lowerFamily.includes("times") || lowerFamily.includes("serif") || lowerFamily.includes("playfair")) {
+        canvasFamily = '"Times New Roman", Times, "Playfair Display"';
         genericFallback = "serif";
       } else if (lowerFamily.includes("courier") || lowerFamily.includes("mono")) {
         canvasFamily = "Courier";
         genericFallback = "monospace";
-      } else if (lowerFamily.includes("playfair")) {
-        canvasFamily = '"Playfair Display"';
-        genericFallback = "serif";
       }
 
-      ctx.font = `${fontPrefix}${fontWeight} ${fitResult.finalFontSize}px ${canvasFamily}, ${genericFallback}`;
-      ctx.fillStyle = el.style?.color || "#000000";
-      ctx.textAlign = (el.style?.textAlign as CanvasTextAlign) || "left";
+      const defaultColor = el.style?.color || "#000000";
+      const lineHeightMultiplier = typeof el.style?.lineHeight === "number" ? el.style.lineHeight : 1.45;
+      const lineHeight = finalFontSize * lineHeightMultiplier;
 
-      const lineHeightMultiplier = typeof el.style?.lineHeight === "number" ? el.style.lineHeight : 1.35;
-      const lineHeight = fitResult.finalFontSize * lineHeightMultiplier;
-      let startX = position.x;
-      if (el.style?.textAlign === "center") startX = position.x + position.width / 2;
-      if (el.style?.textAlign === "right") startX = position.x + position.width;
+      linesToRender.forEach((line, index) => {
+        const lineY = position.y + (index + 1) * lineHeight;
+        const segments = parseFormattedSegments(line, defaultColor, isBold);
 
-      fitResult.lines.forEach((line, index) => {
-        const cleanLine = (line || "").replace(/[\r\n]+/g, " ").trim();
-        if (cleanLine) {
-          const lineY = position.y + (index + 1) * lineHeight;
-          ctx.fillText(cleanLine, startX, lineY);
+        let totalLineWidth = 0;
+        const measuredCanvasSegments = segments.map((seg) => {
+          const segWeight = seg.bold ? "bold" : (isBold ? "bold" : "normal");
+          const fontSpec = `${fontPrefix}${segWeight} ${finalFontSize}px ${canvasFamily}, ${genericFallback}`;
+          ctx.font = fontSpec;
+          const w = ctx.measureText(seg.text).width;
+          totalLineWidth += w;
+          return { ...seg, font: fontSpec, width: w };
+        });
 
-          if (hasUnderline) {
-            const metrics = ctx.measureText(cleanLine);
-            let uX = startX;
-            if (el.style?.textAlign === "center") uX = startX - metrics.width / 2;
-            if (el.style?.textAlign === "right") uX = startX - metrics.width;
-            ctx.beginPath();
-            ctx.lineWidth = Math.max(1, fitResult.finalFontSize * 0.07);
-            ctx.strokeStyle = el.style?.color || "#000000";
-            ctx.moveTo(uX, lineY + 2);
-            ctx.lineTo(uX + metrics.width, lineY + 2);
-            ctx.stroke();
-          }
+        let currX = position.x;
+        if (el.style?.textAlign === "center") {
+          currX = position.x + (position.width - totalLineWidth) / 2;
+        } else if (el.style?.textAlign === "right") {
+          currX = position.x + position.width - totalLineWidth;
+        }
+
+        for (const seg of measuredCanvasSegments) {
+          ctx.font = seg.font;
+          ctx.fillStyle = seg.color;
+          ctx.fillText(seg.text, currX, lineY);
+          currX += seg.width;
+        }
+
+        if (hasUnderline) {
+          let uX = position.x;
+          if (el.style?.textAlign === "center") uX = position.x + (position.width - totalLineWidth) / 2;
+          if (el.style?.textAlign === "right") uX = position.x + position.width - totalLineWidth;
+          ctx.beginPath();
+          ctx.lineWidth = Math.max(1, finalFontSize * 0.07);
+          ctx.strokeStyle = defaultColor;
+          ctx.moveTo(uX, lineY + 2);
+          ctx.lineTo(uX + totalLineWidth, lineY + 2);
+          ctx.stroke();
         }
       });
 
       // Render to PDF
-      const isTimes = fontFamily.toLowerCase().includes("times") || fontFamily.toLowerCase().includes("serif") || fontFamily.toLowerCase().includes("georgia") || fontFamily.toLowerCase().includes("playfair");
-      const isCourier = fontFamily.toLowerCase().includes("courier") || fontFamily.toLowerCase().includes("mono");
-      const isBold = fontWeight > 500;
-
-      let pdfFont = helveticaFont;
+      let pdfFontRegular = helveticaFont;
+      let pdfFontBold = helveticaBold;
       if (isTimes) {
-        if (isBold && isItalic) pdfFont = timesBoldItalic;
-        else if (isBold) pdfFont = timesBold;
-        else if (isItalic) pdfFont = timesItalic;
-        else pdfFont = timesRoman;
+        pdfFontRegular = isItalic ? timesItalic : timesRoman;
+        pdfFontBold = isItalic ? timesBoldItalic : timesBold;
       } else if (isCourier) {
-        pdfFont = isBold ? courierBold : courierFont;
+        pdfFontRegular = courierFont;
+        pdfFontBold = courierBold;
       } else {
-        if (isBold && isItalic) pdfFont = helveticaBoldOblique;
-        else if (isBold) pdfFont = helveticaBold;
-        else if (isItalic) pdfFont = helveticaOblique;
-        else pdfFont = helveticaFont;
+        pdfFontRegular = isItalic ? helveticaOblique : helveticaFont;
+        pdfFontBold = isItalic ? helveticaBoldOblique : helveticaBold;
       }
 
-      const textColor = parseColorToRgb(el.style?.color);
+      linesToRender.forEach((line, index) => {
+        const segments = parseFormattedSegments(line, defaultColor, isBold);
 
-      fitResult.lines.forEach((line, index) => {
-        const cleanLine = (line || "")
-          .replace(/[\r\n]+/g, " ")
-          .replace(/[\u201C\u201D]/g, '"')
-          .replace(/[\u2018\u2019]/g, "'")
-          .replace(/[\u2013\u2014]/g, "-")
-          .trim();
-        if (!cleanLine) return;
+        let totalPdfWidth = 0;
+        const measuredPdfSegments = segments.map((seg) => {
+          const isSegBold = seg.bold || isBold;
+          const segFont = isSegBold ? pdfFontBold : pdfFontRegular;
 
-        const textWidth = pdfFont.widthOfTextAtSize(cleanLine, fitResult.finalFontSize);
-        let pdfX = position.x;
-        if (el.style?.textAlign === "center") pdfX = position.x + (position.width - textWidth) / 2;
-        if (el.style?.textAlign === "right") pdfX = position.x + position.width - textWidth;
+          const cleanSegText = seg.text
+            .replace(/[\u201C\u201D]/g, '"')
+            .replace(/[\u2018\u2019]/g, "'")
+            .replace(/[\u2013\u2014]/g, "-");
 
-        // pdf-lib origin is bottom-left
-        const pdfY = docHeight - (position.y + (index + 1) * lineHeight);
-
-        page.drawText(cleanLine, {
-          x: pdfX,
-          y: pdfY,
-          size: fitResult.finalFontSize,
-          font: pdfFont,
-          color: textColor,
+          const w = segFont.widthOfTextAtSize(cleanSegText, finalFontSize);
+          totalPdfWidth += w;
+          return { ...seg, cleanText: cleanSegText, font: segFont, width: w };
         });
 
+        let pdfX = position.x;
+        if (el.style?.textAlign === "center") {
+          pdfX = position.x + (position.width - totalPdfWidth) / 2;
+        } else if (el.style?.textAlign === "right") {
+          pdfX = position.x + position.width - totalPdfWidth;
+        }
+
+        const pdfY = docHeight - (position.y + (index + 1) * lineHeight);
+
+        for (const seg of measuredPdfSegments) {
+          page.drawText(seg.cleanText, {
+            x: pdfX,
+            y: pdfY,
+            size: finalFontSize,
+            font: seg.font,
+            color: parseColorToRgb(seg.color),
+          });
+          pdfX += seg.width;
+        }
+
         if (hasUnderline) {
+          let uX = position.x;
+          if (el.style?.textAlign === "center") uX = position.x + (position.width - totalPdfWidth) / 2;
+          if (el.style?.textAlign === "right") uX = position.x + position.width - totalPdfWidth;
           page.drawLine({
-            start: { x: pdfX, y: pdfY - 2 },
-            end: { x: pdfX + textWidth, y: pdfY - 2 },
-            thickness: Math.max(0.75, fitResult.finalFontSize * 0.06),
-            color: textColor,
+            start: { x: uX, y: pdfY - 2 },
+            end: { x: uX + totalPdfWidth, y: pdfY - 2 },
+            thickness: Math.max(0.75, finalFontSize * 0.06),
+            color: parseColorToRgb(defaultColor),
           });
         }
       });

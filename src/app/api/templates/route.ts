@@ -43,13 +43,13 @@ export function getSoftmuskInternshipElements() {
       id: "el_student_name",
       type: "variable",
       variableKey: "student_name",
-      position: { x: 45, y: 298, width: 505, height: 42 },
+      position: { x: 105, y: 295, width: 385, height: 40 },
       style: {
         fontSize: 26,
         fontFamily: "Times-Roman",
         fontWeight: 700,
         textAlign: "center",
-        color: "#002b66",
+        color: "#03046e",
       },
       smartFit: {
         enabled: true,
@@ -62,19 +62,19 @@ export function getSoftmuskInternshipElements() {
       id: "el_para_1",
       type: "text",
       content:
-        "A student of {{college_name}}, {{dept}} has successfully completed his/her internship from {{start_date}} to {{end_date}} at \u201cSoftmusk Info Pvt. Ltd Belagavi, Karnataka.\u201d",
-      position: { x: 45, y: 350, width: 505, height: 62 },
+        "A student of <b>{{college_name}}</b> has successfully completed his/her internship\nfrom <blue>{{start_date}}</blue> to <blue>{{end_date}}</blue> at\n<blue>“Softmusk Info Pvt. Ltd Belagavi, Karnataka.”</blue>",
+      position: { x: 45, y: 350, width: 505, height: 68 },
       style: {
-        fontSize: 13,
+        fontSize: 12.5,
         fontFamily: "Times-Roman",
         fontWeight: 400,
         textAlign: "center",
         color: "#1e293b",
-        lineHeight: 1.45,
+        lineHeight: 1.55,
       },
       smartFit: {
         enabled: true,
-        maxLines: 3,
+        maxLines: 4,
         minFontSize: 10,
         wordWrap: true,
       },
@@ -83,15 +83,36 @@ export function getSoftmuskInternshipElements() {
       id: "el_para_2",
       type: "text",
       content:
-        "Was able to successfully participate in and accomplish all the tasks required for the project entitled \u201c{{domain}}\u201d through which he/she was able to showcase his/her great work and team player skills.",
-      position: { x: 45, y: 418, width: 505, height: 55 },
+        "Was able to successfully participate in and accomplish all the tasks required for\nthe project entitled <b>“{{domain}}”</b> through which\nhe/she was able to showcase his/her great work and team player skills.",
+      position: { x: 45, y: 424, width: 505, height: 65 },
       style: {
-        fontSize: 13,
+        fontSize: 12.5,
         fontFamily: "Times-Roman",
         fontWeight: 400,
         textAlign: "center",
         color: "#1e293b",
-        lineHeight: 1.45,
+        lineHeight: 1.55,
+      },
+      smartFit: {
+        enabled: true,
+        maxLines: 4,
+        minFontSize: 10,
+        wordWrap: true,
+      },
+    },
+    {
+      id: "el_para_3",
+      type: "text",
+      content:
+        "We at Softmusk Info Pvt. Ltd have thoroughly enjoyed having him/her as an intern\nand we wish him/her all the best in his/her future endeavors.",
+      position: { x: 45, y: 494, width: 505, height: 45 },
+      style: {
+        fontSize: 12.5,
+        fontFamily: "Times-Roman",
+        fontWeight: 400,
+        textAlign: "center",
+        color: "#1e293b",
+        lineHeight: 1.55,
       },
       smartFit: {
         enabled: true,
@@ -101,36 +122,15 @@ export function getSoftmuskInternshipElements() {
       },
     },
     {
-      id: "el_para_3",
-      type: "text",
-      content:
-        "We at Softmusk Info Pvt. Ltd have thoroughly enjoyed having him/her as an intern and we wish him/her all the best in his/her future endeavors.",
-      position: { x: 45, y: 478, width: 505, height: 45 },
-      style: {
-        fontSize: 13,
-        fontFamily: "Times-Roman",
-        fontWeight: 400,
-        textAlign: "center",
-        color: "#1e293b",
-        lineHeight: 1.45,
-      },
-      smartFit: {
-        enabled: true,
-        maxLines: 2,
-        minFontSize: 10,
-        wordWrap: true,
-      },
-    },
-    {
       id: "el_qr_token",
       type: "qr",
-      position: { x: 468, y: 525, width: 72, height: 72 },
+      position: { x: 468, y: 535, width: 72, height: 72 },
     },
     {
       id: "el_qr_label",
       type: "text",
       content: "Scan the QR code to verify this certificate",
-      position: { x: 430, y: 600, width: 148, height: 22 },
+      position: { x: 430, y: 610, width: 148, height: 20 },
       style: {
         fontSize: 7.5,
         fontFamily: "Helvetica",
@@ -154,13 +154,13 @@ export function getSoftmuskCollaborationElements() {
       id: "el_student_name",
       type: "variable",
       variableKey: "student_name",
-      position: { x: 45, y: 298, width: 505, height: 42 },
+      position: { x: 105, y: 295, width: 385, height: 40 },
       style: {
         fontSize: 26,
         fontFamily: "Times-Roman",
         fontWeight: 700,
         textAlign: "center",
-        color: "#002b66",
+        color: "#03046e",
       },
       smartFit: {
         enabled: true,
@@ -173,19 +173,19 @@ export function getSoftmuskCollaborationElements() {
       id: "el_para_1",
       type: "text",
       content:
-        "A student of {{college_name}}, {{dept}} has successfully completed the joint industry internship program from {{start_date}} to {{end_date}} in collaboration with \u201cSoftmusk Info Pvt. Ltd Belagavi, Karnataka.\u201d",
-      position: { x: 45, y: 350, width: 505, height: 62 },
+        "A student of <b>{{college_name}}</b> has successfully completed the joint industry internship program\nfrom <blue>{{start_date}}</blue> to <blue>{{end_date}}</blue> in collaboration with\n<blue>“Softmusk Info Pvt. Ltd Belagavi, Karnataka.”</blue>",
+      position: { x: 45, y: 350, width: 505, height: 68 },
       style: {
-        fontSize: 13,
+        fontSize: 12.5,
         fontFamily: "Times-Roman",
         fontWeight: 400,
         textAlign: "center",
         color: "#1e293b",
-        lineHeight: 1.45,
+        lineHeight: 1.55,
       },
       smartFit: {
         enabled: true,
-        maxLines: 3,
+        maxLines: 4,
         minFontSize: 10,
         wordWrap: true,
       },
@@ -194,15 +194,36 @@ export function getSoftmuskCollaborationElements() {
       id: "el_para_2",
       type: "text",
       content:
-        "Was able to successfully participate in and accomplish all the tasks required for the collaborative project entitled \u201c{{domain}}\u201d through which he/she showcased exemplary technical capability and team leadership.",
-      position: { x: 45, y: 418, width: 505, height: 55 },
+        "Was able to successfully participate in and accomplish all the tasks required for the\ncollaborative project entitled <b>“{{domain}}”</b> through which\nhe/she showcased exemplary technical capability and team leadership.",
+      position: { x: 45, y: 424, width: 505, height: 65 },
       style: {
-        fontSize: 13,
+        fontSize: 12.5,
         fontFamily: "Times-Roman",
         fontWeight: 400,
         textAlign: "center",
         color: "#1e293b",
-        lineHeight: 1.45,
+        lineHeight: 1.55,
+      },
+      smartFit: {
+        enabled: true,
+        maxLines: 4,
+        minFontSize: 10,
+        wordWrap: true,
+      },
+    },
+    {
+      id: "el_para_3",
+      type: "text",
+      content:
+        "We at Softmusk Info Pvt. Ltd have thoroughly enjoyed collaborating with the\nstudent and wish him/her all the best in his/her future endeavors.",
+      position: { x: 45, y: 494, width: 505, height: 45 },
+      style: {
+        fontSize: 12.5,
+        fontFamily: "Times-Roman",
+        fontWeight: 400,
+        textAlign: "center",
+        color: "#1e293b",
+        lineHeight: 1.55,
       },
       smartFit: {
         enabled: true,
@@ -212,36 +233,15 @@ export function getSoftmuskCollaborationElements() {
       },
     },
     {
-      id: "el_para_3",
-      type: "text",
-      content:
-        "We at Softmusk Info Pvt. Ltd have thoroughly enjoyed collaborating with the student and wish him/her all the best in his/her future endeavors.",
-      position: { x: 45, y: 478, width: 505, height: 45 },
-      style: {
-        fontSize: 13,
-        fontFamily: "Times-Roman",
-        fontWeight: 400,
-        textAlign: "center",
-        color: "#1e293b",
-        lineHeight: 1.45,
-      },
-      smartFit: {
-        enabled: true,
-        maxLines: 2,
-        minFontSize: 10,
-        wordWrap: true,
-      },
-    },
-    {
       id: "el_qr_token",
       type: "qr",
-      position: { x: 468, y: 525, width: 72, height: 72 },
+      position: { x: 468, y: 535, width: 72, height: 72 },
     },
     {
       id: "el_qr_label",
       type: "text",
       content: "Scan the QR code to verify this certificate",
-      position: { x: 430, y: 600, width: 148, height: 22 },
+      position: { x: 430, y: 610, width: 148, height: 20 },
       style: {
         fontSize: 7.5,
         fontFamily: "Helvetica",
@@ -265,13 +265,13 @@ export function getSoftmuskWorkshopElements() {
       id: "el_student_name",
       type: "variable",
       variableKey: "student_name",
-      position: { x: 45, y: 298, width: 505, height: 42 },
+      position: { x: 105, y: 295, width: 385, height: 40 },
       style: {
         fontSize: 26,
         fontFamily: "Times-Roman",
         fontWeight: 700,
         textAlign: "center",
-        color: "#002b66",
+        color: "#03046e",
       },
       smartFit: {
         enabled: true,
@@ -284,19 +284,19 @@ export function getSoftmuskWorkshopElements() {
       id: "el_para_1",
       type: "text",
       content:
-        "A student of {{college_name}}, {{dept}} has successfully attended and completed the intensive technical workshop on \u201c{{domain}}\u201d conducted by \u201cSoftmusk Info Pvt. Ltd Belagavi, Karnataka\u201d from {{start_date}} to {{end_date}}.",
-      position: { x: 45, y: 350, width: 505, height: 62 },
+        "A student of <b>{{college_name}}</b> has successfully completed the skill development workshop\non <blue>{{start_date}}</blue> conducted by\n<blue>“Softmusk Info Pvt. Ltd Belagavi, Karnataka.”</blue>",
+      position: { x: 45, y: 350, width: 505, height: 68 },
       style: {
-        fontSize: 13,
+        fontSize: 12.5,
         fontFamily: "Times-Roman",
         fontWeight: 400,
         textAlign: "center",
         color: "#1e293b",
-        lineHeight: 1.45,
+        lineHeight: 1.55,
       },
       smartFit: {
         enabled: true,
-        maxLines: 3,
+        maxLines: 4,
         minFontSize: 10,
         wordWrap: true,
       },
@@ -305,15 +305,36 @@ export function getSoftmuskWorkshopElements() {
       id: "el_para_2",
       type: "text",
       content:
-        "Demonstrated commendable dedication, active participation, and accomplished all practical lab modules, hands-on tasks, and project benchmarks.",
-      position: { x: 45, y: 418, width: 505, height: 55 },
+        "Was able to actively engage and master practical concepts in the domain of\n<b>“{{domain}}”</b> showcasing\nexceptional learning capability and dedication to practical excellence.",
+      position: { x: 45, y: 424, width: 505, height: 65 },
       style: {
-        fontSize: 13,
+        fontSize: 12.5,
         fontFamily: "Times-Roman",
         fontWeight: 400,
         textAlign: "center",
         color: "#1e293b",
-        lineHeight: 1.45,
+        lineHeight: 1.55,
+      },
+      smartFit: {
+        enabled: true,
+        maxLines: 4,
+        minFontSize: 10,
+        wordWrap: true,
+      },
+    },
+    {
+      id: "el_para_3",
+      type: "text",
+      content:
+        "We at Softmusk Info Pvt. Ltd congratulate the student on this accomplishment\nand wish him/her immense success in all future technical pursuits.",
+      position: { x: 45, y: 494, width: 505, height: 45 },
+      style: {
+        fontSize: 12.5,
+        fontFamily: "Times-Roman",
+        fontWeight: 400,
+        textAlign: "center",
+        color: "#1e293b",
+        lineHeight: 1.55,
       },
       smartFit: {
         enabled: true,
@@ -323,36 +344,15 @@ export function getSoftmuskWorkshopElements() {
       },
     },
     {
-      id: "el_para_3",
-      type: "text",
-      content:
-        "We congratulate him/her on successfully completing this program and wish him/her continued success in all academic and professional pursuits.",
-      position: { x: 45, y: 478, width: 505, height: 45 },
-      style: {
-        fontSize: 13,
-        fontFamily: "Times-Roman",
-        fontWeight: 400,
-        textAlign: "center",
-        color: "#1e293b",
-        lineHeight: 1.45,
-      },
-      smartFit: {
-        enabled: true,
-        maxLines: 2,
-        minFontSize: 10,
-        wordWrap: true,
-      },
-    },
-    {
       id: "el_qr_token",
       type: "qr",
-      position: { x: 468, y: 525, width: 72, height: 72 },
+      position: { x: 468, y: 535, width: 72, height: 72 },
     },
     {
       id: "el_qr_label",
       type: "text",
       content: "Scan the QR code to verify this certificate",
-      position: { x: 430, y: 600, width: 148, height: 22 },
+      position: { x: 430, y: 610, width: 148, height: 20 },
       style: {
         fontSize: 7.5,
         fontFamily: "Helvetica",
@@ -378,7 +378,7 @@ export const OFFICIAL_TEMPLATES_CONFIG = [
   {
     name: "Softmusk Internship Certificate (Official)",
     backgroundUrl:
-      "https://res.cloudinary.com/dhbrorn46/image/upload/v1789025233/official_templates/softmusk_internship_clean_bg.png",
+      "https://res.cloudinary.com/dhbrorn46/image/upload/v1789030082/official_templates/softmusk_internship_clean_bg.png",
     localFallbackUrl: "/templates/softmusk-internship-clean-bg.png",
     backgroundPublicId: "official_templates/softmusk_internship_clean_bg",
     width: 595.28,
@@ -388,7 +388,7 @@ export const OFFICIAL_TEMPLATES_CONFIG = [
   {
     name: "Softmusk College Internship Collaboration",
     backgroundUrl:
-      "https://res.cloudinary.com/dhbrorn46/image/upload/v1789025334/official_templates/softmusk_collaboration_clean_bg.png",
+      "https://res.cloudinary.com/dhbrorn46/image/upload/v1789030084/official_templates/softmusk_collaboration_clean_bg.png",
     localFallbackUrl: "/templates/softmusk-collaboration-clean-bg.png",
     backgroundPublicId: "official_templates/softmusk_collaboration_clean_bg",
     width: 595.28,
@@ -398,7 +398,7 @@ export const OFFICIAL_TEMPLATES_CONFIG = [
   {
     name: "Softmusk Technical Workshop Certificate",
     backgroundUrl:
-      "https://res.cloudinary.com/dhbrorn46/image/upload/v1789025336/official_templates/softmusk_workshop_clean_bg.png",
+      "https://res.cloudinary.com/dhbrorn46/image/upload/v1789030086/official_templates/softmusk_workshop_clean_bg.png",
     localFallbackUrl: "/templates/softmusk-workshop-clean-bg.png",
     backgroundPublicId: "official_templates/softmusk_workshop_clean_bg",
     width: 595.28,

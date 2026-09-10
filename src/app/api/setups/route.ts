@@ -137,7 +137,7 @@ export async function GET(req: Request) {
         name: "Softmusk Internship Program (Official)",
         templateMatch: "Internship Certificate",
         programText:
-          "A student of {{college_name}}, {{dept}} has successfully completed his/her internship from {{start_date}} to {{end_date}} at \u201cSoftmusk Info Pvt. Ltd Belagavi, Karnataka.\u201d\n\nWas able to successfully participate in and accomplish all the tasks required for the project entitled \u201c{{domain}}\u201d through which he/she was able to showcase his/her great work and team player skills.\n\nWe at Softmusk Info Pvt. Ltd have thoroughly enjoyed having him/her as an intern and we wish him/her all the best in his/her future endeavors.",
+          "A student of <b>{{college_name}}</b> has successfully completed his/her internship\nfrom <blue>{{start_date}}</blue> to <blue>{{end_date}}</blue> at\n<blue>“Softmusk Info Pvt. Ltd Belagavi, Karnataka.”</blue>\n\nWas able to successfully participate in and accomplish all the tasks required for\nthe project entitled <b>“{{domain}}”</b> through which\nhe/she was able to showcase his/her great work and team player skills.\n\nWe at Softmusk Info Pvt. Ltd have thoroughly enjoyed having him/her as an intern\nand we wish him/her all the best in his/her future endeavors.",
         variables: [
           { key: "student_name", label: "Student Name", type: "text", required: true },
           { key: "reg_no", label: "Reg No", type: "text", required: false },
@@ -152,7 +152,7 @@ export async function GET(req: Request) {
         name: "Softmusk College Internship Collaboration",
         templateMatch: "Collaboration",
         programText:
-          "A student of {{college_name}}, {{dept}} has successfully completed the joint industry internship program from {{start_date}} to {{end_date}} in collaboration with \u201cSoftmusk Info Pvt. Ltd Belagavi, Karnataka.\u201d\n\nWas able to successfully participate in and accomplish all the tasks required for the collaborative project entitled \u201c{{domain}}\u201d through which he/she showcased exemplary technical capability and team leadership.\n\nWe at Softmusk Info Pvt. Ltd have thoroughly enjoyed collaborating with the student and wish him/her all the best in his/her future endeavors.",
+          "A student of <b>{{college_name}}</b> has successfully completed the joint industry internship program\nfrom <blue>{{start_date}}</blue> to <blue>{{end_date}}</blue> in collaboration with\n<blue>“Softmusk Info Pvt. Ltd Belagavi, Karnataka.”</blue>\n\nWas able to successfully participate in and accomplish all the tasks required for the\ncollaborative project entitled <b>“{{domain}}”</b> through which\nhe/she showcased exemplary technical capability and team leadership.\n\nWe at Softmusk Info Pvt. Ltd have thoroughly enjoyed collaborating with the\nstudent and wish him/her all the best in his/her future endeavors.",
         variables: [
           { key: "student_name", label: "Student Name", type: "text", required: true },
           { key: "reg_no", label: "Reg No", type: "text", required: false },
@@ -167,7 +167,7 @@ export async function GET(req: Request) {
         name: "Softmusk Technical Workshop & Training",
         templateMatch: "Workshop",
         programText:
-          "A student of {{college_name}}, {{dept}} has successfully attended and completed the intensive technical workshop on \u201c{{domain}}\u201d conducted by \u201cSoftmusk Info Pvt. Ltd Belagavi, Karnataka\u201d from {{start_date}} to {{end_date}}.\n\nDemonstrated commendable dedication, active participation, and accomplished all practical lab modules, hands-on tasks, and project benchmarks.\n\nWe congratulate him/her on successfully completing this program and wish him/her continued success in all academic and professional pursuits.",
+          "A student of <b>{{college_name}}</b> has successfully completed the skill development workshop\non <blue>{{start_date}}</blue> conducted by\n<blue>“Softmusk Info Pvt. Ltd Belagavi, Karnataka.”</blue>\n\nWas able to actively engage and master practical concepts in the domain of\n<b>“{{domain}}”</b> showcasing\nexceptional learning capability and dedication to practical excellence.\n\nWe at Softmusk Info Pvt. Ltd congratulate the student on this accomplishment\nand wish him/her immense success in all future technical pursuits.",
         variables: [
           { key: "student_name", label: "Student Name", type: "text", required: true },
           { key: "reg_no", label: "Reg No", type: "text", required: false },
