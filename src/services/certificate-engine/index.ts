@@ -90,14 +90,28 @@ export interface GenerateEngineOptions {
   verificationToken?: string; // Existing token if regenerating or editing
 }
 
+export const OFFICIAL_APP_URL = "https://smc.onqeva.in";
+
 export function getAppBaseUrl(req?: Request, customUrl?: string): string {
   if (customUrl && typeof customUrl === "string") {
     const clean = customUrl.replace(/[\r\n\t\s]+/g, "").replace(/\/+$/, "");
-    if (clean && !clean.includes("localhost")) return clean;
+    if (
+      clean &&
+      !clean.includes("localhost") &&
+      !clean.includes("127.0.0.1") &&
+      !clean.includes("vercel.app")
+    ) {
+      return clean;
+    }
   }
 
   const envUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/[\r\n\t\s]+/g, "").replace(/\/+$/, "");
-  if (envUrl && !envUrl.includes("localhost")) {
+  if (
+    envUrl &&
+    !envUrl.includes("localhost") &&
+    !envUrl.includes("127.0.0.1") &&
+    !envUrl.includes("vercel.app")
+  ) {
     return envUrl;
   }
 
@@ -105,7 +119,12 @@ export function getAppBaseUrl(req?: Request, customUrl?: string): string {
     try {
       const proto = req.headers.get("x-forwarded-proto") || "https";
       const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
-      if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
+      if (
+        host &&
+        !host.includes("localhost") &&
+        !host.includes("127.0.0.1") &&
+        !host.includes("vercel.app")
+      ) {
         const cleanHost = host.replace(/[\r\n\t\s]+/g, "");
         return `${proto}://${cleanHost}`.replace(/\/+$/, "");
       }
@@ -114,11 +133,7 @@ export function getAppBaseUrl(req?: Request, customUrl?: string): string {
     }
   }
 
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL.replace(/[\r\n\t\s]+/g, "").replace(/\/+$/, "")}`;
-  }
-
-  return "https://smc.onqeva.in";
+  return OFFICIAL_APP_URL;
 }
 
 export async function generateCertificateEngine(

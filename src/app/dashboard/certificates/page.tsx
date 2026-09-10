@@ -294,9 +294,20 @@ export default function CertificatesPage() {
     }
   };
 
+  const getVerificationUrl = (cert: CertificateItem) => {
+    const origin =
+      typeof window !== "undefined" &&
+      !window.location.origin.includes("localhost") &&
+      !window.location.origin.includes("127.0.0.1") &&
+      !window.location.origin.includes("vercel.app")
+        ? window.location.origin
+        : "https://smc.onqeva.in";
+    return `${origin}/verify/${cert.verificationToken || cert._id}`;
+  };
+
   const copyVerificationLink = (cert: CertificateItem) => {
     if (typeof window === "undefined") return;
-    const url = `${window.location.origin}/verify/${cert.verificationToken || cert._id}`;
+    const url = getVerificationUrl(cert);
     navigator.clipboard.writeText(url);
     setCopiedCertId(cert._id);
     success(`Verification URL copied to clipboard!`, "Link Copied");
@@ -1512,7 +1523,7 @@ export default function CertificatesPage() {
                       <input
                         type="text"
                         readOnly
-                        value={typeof window !== "undefined" ? `${window.location.origin}/verify/${inspectCert.verificationToken || inspectCert._id}` : ""}
+                        value={typeof window !== "undefined" ? getVerificationUrl(inspectCert) : ""}
                         className="flex-1 bg-white border border-slate-300 text-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono select-all focus:outline-none"
                       />
                       <button
@@ -1543,7 +1554,7 @@ export default function CertificatesPage() {
                       <Download size={13} /> PDF Document
                     </a>
                     <a
-                      href={typeof window !== "undefined" ? `${window.location.origin}/verify/${inspectCert.verificationToken || inspectCert._id}` : "#"}
+                      href={typeof window !== "undefined" ? getVerificationUrl(inspectCert) : "#"}
                       target="_blank"
                       rel="noreferrer"
                       className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold py-2 rounded-lg text-xs text-center transition-all flex items-center justify-center gap-1.5 shadow-xs"

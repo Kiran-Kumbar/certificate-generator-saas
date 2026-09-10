@@ -2,6 +2,17 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
+  const host = request.headers.get("host") || "";
+
+  // Canonicalize old Vercel domain traffic to official domain
+  if (host.includes("vercel.app")) {
+    const targetUrl = new URL(request.url);
+    targetUrl.protocol = "https:";
+    targetUrl.host = "smc.onqeva.in";
+    targetUrl.port = "";
+    return NextResponse.redirect(targetUrl, 301);
+  }
+
   const token = request.cookies.get("token")?.value;
   const { pathname } = request.nextUrl;
 
@@ -27,5 +38,14 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+  ],
 };
