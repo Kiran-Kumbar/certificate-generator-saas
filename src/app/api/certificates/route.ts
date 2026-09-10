@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { Certificate, CertificateSetup, Template, Counter, User, CertificateBatch } from "@/models";
 import { generateCertificateEngine, formatCertificateDate, getAppBaseUrl, formatStudentNameWithSalutation } from "@/services/certificate-engine";
-import { uploadToCloudinary } from "@/services/storage";
+import { uploadToCloudinary, deleteFromCloudinary, extractCloudinaryPublicId } from "@/services/storage";
 import { verifyAuthToken } from "@/lib/auth";
 import { CertificateElement } from "@/types/template";
 
@@ -204,6 +204,75 @@ export async function GET(req: Request) {
     return NextResponse.json({ success: true, certificates });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Fetch certificates error";
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    await dbConnect();
+    const auth = verifyAuthToken(req);
+    if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    let user = await User.findById(auth.userId);
+    if (!user && auth.email) {
+      user = await User.findOne({ email: auth.email });
+    }
+    if (!user) {
+      user = await User.findOne();
+    }
+    if (!user || !user.institutionId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const institutionId = (user.institutionId as any)?._id || user.institutionId;
+
+    const body = await req.json().catch(() => ({}));
+    const ids: string[] = body.ids || body.certificateIds || [];
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: "No certificate IDs provided for deletion" }, { status: 400 });
+    }
+
+    // Find all certificates belonging to this institution
+    const certsToDelete = await Certificate.find({
+      _id: { $in: ids },
+      institutionId,
+    });
+
+    if (!certsToDelete || certsToDelete.length === 0) {
+      return NextResponse.json({ error: "No matching certificates found to delete" }, { status: 404 });
+    }
+
+    // Delete generated assets from Cloudinary in parallel
+    const deletePromises = certsToDelete.flatMap((cert) => {
+      const promises: Promise<boolean>[] = [];
+      if (cert.pngUrl && !cert.pngUrl.startsWith("data:")) {
+        const pngId = extractCloudinaryPublicId(cert.pngUrl, "image");
+        if (pngId) promises.push(deleteFromCloudinary(pngId, "image"));
+      }
+      if (cert.pdfUrl && !cert.pdfUrl.startsWith("data:")) {
+        const pdfId = extractCloudinaryPublicId(cert.pdfUrl, "raw");
+        if (pdfId) promises.push(deleteFromCloudinary(pdfId, "raw"));
+      }
+      return promises;
+    });
+
+    await Promise.allSettled(deletePromises);
+
+    // Delete records from MongoDB
+    const targetIds = certsToDelete.map((c) => c._id);
+    const deleteResult = await Certificate.deleteMany({
+      _id: { $in: targetIds },
+      institutionId,
+    });
+
+    return NextResponse.json({
+      success: true,
+      count: deleteResult.deletedCount,
+      message: `Permanently deleted ${deleteResult.deletedCount} certificate(s) from Database and Cloudinary.`,
+    });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Bulk delete error";
+    console.error("Bulk delete certificates error:", err);
     return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

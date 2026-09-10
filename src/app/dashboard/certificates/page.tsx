@@ -168,6 +168,7 @@ export default function CertificatesPage() {
   // Selection & Export State
   const [selectedCertIds, setSelectedCertIds] = useState<string[]>([]);
   const [exporting, setExporting] = useState(false);
+  const [deletingBulk, setDeletingBulk] = useState(false);
 
   // Dynamic Single Entry Form State
   const [selectedSetupId, setSelectedSetupId] = useState("");
@@ -610,6 +611,7 @@ export default function CertificatesPage() {
       const res = await fetch(`/api/certificates/${certId}`, { method: "DELETE" });
       if (res.ok) {
         info(`Certificate ${certNumber} permanently deleted`, "Deleted");
+        setSelectedCertIds((prev) => prev.filter((id) => id !== certId));
         fetchData();
       } else {
         const data = await res.json();
@@ -618,6 +620,43 @@ export default function CertificatesPage() {
     } catch (e) {
       console.error(e);
       error("Failed to delete certificate", "Network Error");
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedCertIds.length === 0) return;
+    const count = selectedCertIds.length;
+    const confirmMessage =
+      count === 1
+        ? "Permanently delete 1 selected certificate?\n\nThis will remove the record from the database AND delete the generated PDF and PNG files from Cloudinary storage.\n\nThis action CANNOT be undone."
+        : `Permanently delete ${count} selected certificates?\n\nThis will remove all ${count} records from the database AND delete all their generated PDFs and PNGs from Cloudinary storage.\n\nThis action CANNOT be undone.`;
+
+    if (!confirm(confirmMessage)) return;
+
+    setDeletingBulk(true);
+    try {
+      const res = await fetch("/api/certificates", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedCertIds }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        success(
+          data.message || `Successfully deleted ${count} certificate(s) and their Cloudinary assets.`,
+          "Bulk Delete Completed"
+        );
+        setSelectedCertIds([]);
+        await fetchData();
+      } else {
+        error(data.error || "Failed to delete selected certificates", "Bulk Delete Error");
+      }
+    } catch (err) {
+      console.error("Bulk delete error:", err);
+      error(err instanceof Error ? err.message : "Network error during deletion", "Network Error");
+    } finally {
+      setDeletingBulk(false);
     }
   };
 
@@ -860,17 +899,26 @@ export default function CertificatesPage() {
                   </span>
                   <button
                     onClick={() => handleExport("zip")}
-                    disabled={exporting}
-                    className="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                    disabled={exporting || deletingBulk}
+                    className="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
                   >
                     <Archive size={13} /> {exporting ? "Archiving..." : "ZIP Export"}
                   </button>
                   <button
                     onClick={() => handleExport("combined_pdf")}
-                    disabled={exporting}
-                    className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                    disabled={exporting || deletingBulk}
+                    className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
                   >
                     <Download size={13} /> {exporting ? "Building..." : "Combined PDF"}
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    disabled={deletingBulk || exporting}
+                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 hover:border-rose-300 px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
+                    title="Permanently delete selected certificates from Database and Cloudinary"
+                  >
+                    <Trash2 size={13} className="text-rose-600" />
+                    {deletingBulk ? "Deleting..." : `Delete (${selectedCertIds.length})`}
                   </button>
                 </div>
               ) : null

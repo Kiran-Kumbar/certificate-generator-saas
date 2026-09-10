@@ -71,13 +71,36 @@ export async function uploadToCloudinary(
   });
 }
 
+export function extractCloudinaryPublicId(url: string, resourceType: "image" | "raw"): string | null {
+  try {
+    if (!url || url.startsWith("data:")) return null;
+    if (resourceType === "raw") {
+      const match = url.match(/\/raw\/upload\/(?:v\d+\/)?([^\?#]+)/);
+      return match ? match[1] : null;
+    } else {
+      const match = url.match(/\/image\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-zA-Z0-9]+)?$/);
+      return match ? match[1] : null;
+    }
+  } catch {
+    return null;
+  }
+}
+
 export async function deleteFromCloudinary(
   publicId: string,
   resourceType: "image" | "raw" = "image"
 ): Promise<boolean> {
   try {
     const res = await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
-    return res.result === "ok";
+    if (res.result === "ok") return true;
+
+    // Fallback for raw files: try with or without .pdf extension
+    if (resourceType === "raw") {
+      const altId = publicId.endsWith(".pdf") ? publicId.slice(0, -4) : `${publicId}.pdf`;
+      const retryRes = await cloudinary.uploader.destroy(altId, { resource_type: "raw" });
+      return retryRes.result === "ok";
+    }
+    return false;
   } catch (err) {
     console.error("Cloudinary delete error:", err);
     return false;

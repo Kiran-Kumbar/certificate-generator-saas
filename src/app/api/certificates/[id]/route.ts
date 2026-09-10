@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { Certificate, CertificateSetup, Template, User } from "@/models";
 import { generateCertificateEngine, getAppBaseUrl, formatStudentNameWithSalutation } from "@/services/certificate-engine";
-import { uploadToCloudinary, deleteFromCloudinary } from "@/services/storage";
+import { uploadToCloudinary, deleteFromCloudinary, extractCloudinaryPublicId } from "@/services/storage";
 import { verifyAuthToken } from "@/lib/auth";
 import { CertificateElement } from "@/types/template";
 
@@ -122,16 +122,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   }
 }
 
-function extractCloudinaryPublicId(url: string, resourceType: "image" | "raw"): string | null {
-  try {
-    if (!url || url.startsWith("data:")) return null;
-    const match = url.match(/\/(?:image|raw)\/upload\/(?:v\d+\/)?(.+?)(?:\.\w+)?$/);
-    if (match) return match[1];
-    return null;
-  } catch {
-    return null;
-  }
-}
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
