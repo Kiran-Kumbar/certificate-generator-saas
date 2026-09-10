@@ -38,20 +38,20 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
       <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl p-8 shadow-xl">
         <div className="flex flex-col items-center mb-6">
-          <div className="relative w-14 h-14 bg-white border border-slate-200 rounded-xl flex items-center justify-center mb-3.5 p-2 shadow-xs">
+          <div className="relative w-16 h-16 bg-white border border-slate-200 rounded-2xl flex items-center justify-center mb-3.5 p-2 shadow-xs">
             <Image
-              src="/image.png"
-              alt="Softmusk Logo"
-              width={42}
-              height={42}
+              src="/onqeva-logo.png"
+              alt="Onqeva Logo"
+              width={52}
+              height={52}
               className="object-contain"
               priority
             />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
-            Softmusk <span className="text-sky-600">CertSaaS</span>
+            Onqeva <span className="text-sky-600">SaaS</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-1">Enterprise Certificate Operations Platform</p>
+          <p className="text-xs text-slate-500 mt-1">Multi-Tenant Certificate Operations Platform</p>
         </div>
 
         {error && (
@@ -106,7 +106,7 @@ export default function LoginPage() {
 
         <div className="mt-6 pt-6 border-t border-slate-200 text-center">
           <p className="text-xs text-slate-500">
-            Softmusk Info Pvt. Ltd. &copy; {new Date().getFullYear()} &middot; Multi-Tenant Workspace
+            Onqeva Technologies &copy; {new Date().getFullYear()} &middot; Enterprise Credential Platform
           </p>
         </div>
       </div>

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* Softmusk Brand Color System (Derived from public/image.png) */
+  /* Onqeva Brand Color System */
   --primary: #0284C7;
   --primary-hover: #0369A1;
   --primary-light: #38BDF8;

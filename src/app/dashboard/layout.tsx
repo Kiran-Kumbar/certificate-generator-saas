@@ -47,17 +47,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const SidebarContent = () => (
     <>
       <div>
-        {/* Logo & Brand Header */}
+        {/* Tenant Workspace Brand Header */}
         <div className="flex items-center gap-3 px-3 py-3.5 mb-5 border-b border-slate-100">
-          <div className="relative w-10 h-10 flex items-center justify-center p-1 bg-slate-50 border border-slate-200/80 rounded-xl shadow-xs shrink-0">
+          <div className="relative w-10 h-10 flex items-center justify-center p-1 bg-white border border-slate-200/80 rounded-xl shadow-xs shrink-0">
             <Image src="/image.png" alt="Softmusk Logo" width={32} height={32} className="object-contain" priority />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <h2 className="font-bold text-slate-900 text-sm tracking-tight truncate">Softmusk</h2>
-              <span className="text-[10px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded">PRO</span>
+              <span className="text-[10px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded">TENANT</span>
             </div>
-            <p className="text-[11px] text-slate-500 truncate">Certificate Engine</p>
+            <p className="text-[11px] text-slate-500 truncate">Powered by Onqeva</p>
           </div>
         </div>
 

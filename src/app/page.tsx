@@ -24,11 +24,11 @@ export default function HomePage() {
           <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink min-w-0">
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white border border-slate-200 rounded-lg sm:rounded-xl flex items-center justify-center p-1 sm:p-1.5 shadow-xs shrink-0 group-hover:border-sky-300 transition-colors">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/image.png" alt="Softmusk Logo" className="w-full h-full object-contain" />
+              <img src="/onqeva-logo.png" alt="Onqeva Logo" className="w-full h-full object-contain" />
             </div>
             <div className="min-w-0">
               <span className="font-bold text-slate-900 text-sm sm:text-base tracking-tight block whitespace-nowrap truncate">
-                Softmusk CertSaaS
+                Onqeva
               </span>
               <span className="text-[10px] text-sky-600 font-semibold tracking-wide uppercase hidden sm:block -mt-0.5 whitespace-nowrap">
                 Certificate Platform
@@ -268,8 +268,8 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <ShieldCheck size={16} className="text-sky-600 shrink-0" />
-            <span className="font-semibold text-slate-800">Softmusk CertSaaS</span>
-            <span>— Softmusk Info Pvt. Ltd., Belagavi, Karnataka</span>
+            <span className="font-semibold text-slate-800">Onqeva</span>
+            <span>— Enterprise Multi-Tenant Certificate SaaS Platform</span>
           </div>
 
           <div className="flex items-center gap-5 text-slate-500">
@@ -279,14 +279,9 @@ export default function HomePage() {
             <Link href="/dashboard" className="hover:text-slate-900 transition-colors">
               Dashboard
             </Link>
-            <a
-              href="https://softmusk.com"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-sky-600 transition-colors"
-            >
-              softmusk.com
-            </a>
+            <span className="text-slate-400">
+              smc.onqeva.in
+            </span>
           </div>
         </div>
       </footer>

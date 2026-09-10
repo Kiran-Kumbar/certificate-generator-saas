@@ -68,18 +68,18 @@ export default function VerificationPage({ params }: { params: Promise<{ code: s
         <div className="flex flex-col items-center text-center">
           <div className="relative w-16 h-16 bg-white border border-slate-200 rounded-2xl flex items-center justify-center p-2 mb-3.5 shadow-xs">
             <Image
-              src="/image.png"
-              alt="Softmusk Logo"
-              width={46}
-              height={46}
+              src="/onqeva-logo.png"
+              alt="Onqeva Logo"
+              width={50}
+              height={50}
               className="object-contain"
               priority
             />
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">Certificate Verification Portal</h1>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">Onqeva Verification Registry</h1>
           <p className="text-xs text-slate-500 mt-1 flex items-center justify-center gap-1.5">
             <ShieldCheck size={14} className="text-sky-600" />
-            <span>Multi-Tenant Cryptographic Authenticity Registry</span>
+            <span>Multi-Tenant Cryptographic Authenticity Network</span>
           </p>
         </div>
 
@@ -217,11 +217,9 @@ export default function VerificationPage({ params }: { params: Promise<{ code: s
 
       {/* External Footer */}
       <footer className="mt-8 text-center text-xs text-slate-400">
-        <p>Softmusk Info Pvt. Ltd. • Belagavi, Karnataka</p>
+        <p>Verified by Onqeva Credential Network</p>
         <p className="text-[11px] text-slate-400 mt-0.5">
-          <a href="https://softmusk.com" target="_blank" rel="noreferrer" className="hover:text-sky-600 transition-colors">
-            softmusk.com
-          </a>
+          smc.onqeva.in
         </p>
       </footer>
     </div>
