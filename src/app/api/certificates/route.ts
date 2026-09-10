@@ -95,10 +95,20 @@ export async function POST(req: Request) {
     // Normalize incoming Excel recipient data
     const normalizedData = normalizeRecipientData(recipientData);
 
-    // 2. Execute Core Engine
+    // 2. Execute Core Engine with normalized element positions
+    const elements = ((template.elements || []) as CertificateElement[]).map((el) => {
+      if (el.id === "el_student_name" && el.position && el.position.y >= 290) {
+        return {
+          ...el,
+          position: { ...el.position, y: 280, height: 42 },
+        };
+      }
+      return el;
+    });
+
     const renderResult = await generateCertificateEngine({
       backgroundUrl: template.backgroundUrl,
-      elements: template.elements as CertificateElement[],
+      elements,
       data: {
         ...normalizedData,
         program_text: setup.programText,

@@ -409,8 +409,24 @@ export async function generateCertificateEngine(
       const lineHeightMultiplier = typeof el.style?.lineHeight === "number" ? el.style.lineHeight : 1.45;
       const lineHeight = finalFontSize * lineHeightMultiplier;
 
+      // Calculate baseline offset to align with bounding box and match CSS flex centering in preview
+      let firstLineBaseline: number;
+      if (linesToRender.length === 1 && position.height && position.height > finalFontSize) {
+        // Single line vertically centered in bounding box (matches CSS flex justify-center)
+        const boxCenterY = position.y + position.height / 2;
+        firstLineBaseline = boxCenterY + finalFontSize * 0.35;
+      } else if (linesToRender.length > 1 && position.height && position.height >= linesToRender.length * lineHeight) {
+        // Multi-line vertically centered in bounding box
+        const totalTextHeight = (linesToRender.length - 1) * lineHeight + finalFontSize;
+        const boxTop = position.y + (position.height - totalTextHeight) / 2;
+        firstLineBaseline = boxTop + finalFontSize * 0.78;
+      } else {
+        // Top-aligned within bounding box: baseline starts at position.y + fontAscent
+        firstLineBaseline = position.y + finalFontSize * 0.82;
+      }
+
       linesToRender.forEach((line, index) => {
-        const lineY = position.y + (index + 1) * lineHeight;
+        const lineY = firstLineBaseline + index * lineHeight;
         const segments = parseFormattedSegments(line, defaultColor, isBold);
 
         let totalLineWidth = 0;
@@ -489,7 +505,7 @@ export async function generateCertificateEngine(
           pdfX = position.x + position.width - totalPdfWidth;
         }
 
-        const pdfY = docHeight - (position.y + (index + 1) * lineHeight);
+        const pdfY = docHeight - (firstLineBaseline + index * lineHeight);
 
         for (const seg of measuredPdfSegments) {
           page.drawText(seg.cleanText, {

@@ -1030,12 +1030,17 @@ export default function CertificatesPage() {
                       <div className="absolute inset-0 pointer-events-none">
                         {activeSetup.templateId.elements && activeSetup.templateId.elements.length > 0 ? (
                           activeSetup.templateId.elements.map((el, i) => {
+                            const isStudentName = el.id === "el_student_name" || el.variableKey === "student_name";
+                            const posNormY = isStudentName && (el.position?.y || 0) >= 290 ? 280 : (el.position?.y || 0);
+                            const posNormH = isStudentName && (el.position?.y || 0) >= 290 ? 42 : (el.position?.height || 30);
+
                             const tWidth = activeSetup.templateId?.width || 595.28;
                             const tHeight = activeSetup.templateId?.height || 841.89;
+
                             const leftPct = ((el.position?.x || 0) / tWidth) * 100;
-                            const topPct = ((el.position?.y || 0) / tHeight) * 100;
+                            const topPct = (posNormY / tHeight) * 100;
                             const widthPct = ((el.position?.width || 100) / tWidth) * 100;
-                            const heightPct = ((el.position?.height || 30) / tHeight) * 100;
+                            const heightPct = (posNormH / tHeight) * 100;
 
                             if (el.type === "qr") {
                               return (
@@ -1072,7 +1077,6 @@ export default function CertificatesPage() {
                               text = text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => dynamicFormData[k] || `[${k}]`);
                             }
 
-                            const isStudentName = el.id === "el_student_name" || el.variableKey === "student_name";
                             const isCertifyTitle = el.id === "el_certify_title";
 
                             // Scale font: preview max-w is ~370px vs 595.28 pt => 370 / 595.28 ≈ 0.62

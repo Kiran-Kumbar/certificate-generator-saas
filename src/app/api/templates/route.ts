@@ -43,7 +43,7 @@ export function getSoftmuskInternshipElements() {
       id: "el_student_name",
       type: "variable",
       variableKey: "student_name",
-      position: { x: 105, y: 295, width: 385, height: 40 },
+      position: { x: 105, y: 280, width: 385, height: 42 },
       style: {
         fontSize: 26,
         fontFamily: "Times-Roman",
@@ -154,7 +154,7 @@ export function getSoftmuskCollaborationElements() {
       id: "el_student_name",
       type: "variable",
       variableKey: "student_name",
-      position: { x: 105, y: 295, width: 385, height: 40 },
+      position: { x: 105, y: 280, width: 385, height: 42 },
       style: {
         fontSize: 26,
         fontFamily: "Times-Roman",
@@ -265,7 +265,7 @@ export function getSoftmuskWorkshopElements() {
       id: "el_student_name",
       type: "variable",
       variableKey: "student_name",
-      position: { x: 105, y: 295, width: 385, height: 40 },
+      position: { x: 105, y: 280, width: 385, height: 42 },
       style: {
         fontSize: 26,
         fontFamily: "Times-Roman",
@@ -618,7 +618,14 @@ export async function GET(req: Request) {
         const hasOldBg =
           existing.backgroundUrl?.includes("softmusk-template.png") ||
           existing.backgroundUrl?.includes("media_1788889318565");
-        if (hasOldLabel || hasOldBg) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const needsNamePosUpdate = els.some(
+          (e) =>
+            e.id === "el_student_name" &&
+            (Number((e.position as any)?.y) >= 290 || Number((e.position as any)?.height) !== 42)
+        );
+
+        if (hasOldLabel || hasOldBg || needsNamePosUpdate) {
           await Template.updateOne(
             { _id: existing._id },
             {
