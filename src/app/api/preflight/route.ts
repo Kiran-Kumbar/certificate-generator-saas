@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { CertificateSetup, Template, User } from "@/models";
 import { calculateSmartFit } from "@/services/certificate-engine/smart-fit";
-import { formatCertificateDate } from "@/services/certificate-engine";
+import { formatCertificateDate, formatStudentNameWithSalutation } from "@/services/certificate-engine";
 import { registerBundledFonts } from "@/services/certificate-engine/fonts";
 import { CertificateElement } from "@/types/template";
 import { verifyAuthToken } from "@/lib/auth";
@@ -19,7 +19,7 @@ export function normalizeRecipientData(raw: Record<string, unknown>): Record<str
 
     // Comprehensive aliases for real Excel sheets
     if (["student_name", "name", "student", "candidate_name", "candidate"].includes(cleanKey)) {
-      norm["student_name"] = v;
+      norm["student_name"] = formatStudentNameWithSalutation(v);
     }
     if (["college_name", "college", "institution", "institute", "college_institution"].includes(cleanKey)) {
       norm["college_name"] = v;
@@ -138,7 +138,7 @@ export async function POST(req: Request) {
 
       return {
         rowNumber: index + 1,
-        studentName: String(data.student_name || data.name || `Row ${index + 1}`),
+        studentName: formatStudentNameWithSalutation(data.student_name || data.name || `Row ${index + 1}`),
         regNo: String(data.reg_no || ""),
         collegeName: String(data.college_name || ""),
         dept: String(data.dept || ""),

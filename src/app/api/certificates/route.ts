@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { Certificate, CertificateSetup, Template, Counter, User, CertificateBatch } from "@/models";
-import { generateCertificateEngine, formatCertificateDate, getAppBaseUrl } from "@/services/certificate-engine";
+import { generateCertificateEngine, formatCertificateDate, getAppBaseUrl, formatStudentNameWithSalutation } from "@/services/certificate-engine";
 import { uploadToCloudinary } from "@/services/storage";
 import { verifyAuthToken } from "@/lib/auth";
 import { CertificateElement } from "@/types/template";
@@ -16,7 +16,9 @@ function normalizeRecipientData(raw: Record<string, unknown>): Record<string, un
       norm[cleanKey] = v;
     }
     // Specific aliases
-    if (cleanKey === "student_name" || cleanKey === "name") norm["student_name"] = v;
+    if (cleanKey === "student_name" || cleanKey === "name") {
+      norm["student_name"] = formatStudentNameWithSalutation(v);
+    }
     if (cleanKey === "college_name" || cleanKey === "college") norm["college_name"] = v;
     if (cleanKey === "reg_no" || cleanKey === "registration_no") norm["reg_no"] = v;
     if (cleanKey === "start_date" || cleanKey === "from_date") norm["start_date"] = formatCertificateDate(v);
@@ -134,7 +136,9 @@ export async function POST(req: Request) {
     });
 
     // 4. Save Certificate Document to MongoDB
-    const studentName = String(normalizedData.student_name || normalizedData.name || "Recipient");
+    const studentName = formatStudentNameWithSalutation(
+      normalizedData.student_name || normalizedData.name || "Recipient"
+    );
 
     const certificate = await Certificate.create({
       institutionId,

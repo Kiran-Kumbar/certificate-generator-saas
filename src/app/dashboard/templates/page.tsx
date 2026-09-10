@@ -75,6 +75,24 @@ interface Asset {
   url: string;
 }
 
+function formatStudentNameWithSalutation(name: unknown): string {
+  if (!name) return "";
+  let str = String(name).trim();
+  if (!str) return "";
+
+  // Normalize any variation of Mr./ Ms. or Mr./Ms. or Mr / Ms
+  if (/^mr\.?\s*\/\s*ms\.?\s+/i.test(str)) {
+    return str.replace(/^mr\.?\s*\/\s*ms\.?\s+/i, "Mr./ Ms. ");
+  }
+
+  // If starts with single prefix like Mr., Ms., Mrs., or Miss, replace with Mr./ Ms.
+  if (/^(mr\.?|ms\.?|mrs\.?|miss)\s+/i.test(str)) {
+    str = str.replace(/^(mr\.?|ms\.?|mrs\.?|miss)\s+/i, "");
+  }
+
+  return `Mr./ Ms. ${str}`;
+}
+
 // 5 Realistic Student Profiles for Testing Name Lengths & Layouts
 const SAMPLE_STUDENTS = [
   {
@@ -139,13 +157,14 @@ const PRESET_SOFTMUSK_ELEMENTS: CertificateElement[] = [
     id: "el_student_name",
     type: "variable",
     variableKey: "student_name",
-    position: { x: 45, y: 298, width: 505, height: 42 },
+    content: "Mr./ Ms. Rahul Sharma",
+    position: { x: 105, y: 280, width: 385, height: 42 },
     style: {
       fontSize: 26,
       fontFamily: "Times-Roman",
       fontWeight: 700,
       textAlign: "center",
-      color: "#002b66",
+      color: "#03046e",
     },
     smartFit: {
       enabled: true,
@@ -1892,8 +1911,10 @@ export default function TemplateEditorPage() {
                           {el.type === "variable" && (
                             previewMode ? (
                               <span className="font-bold tracking-tight text-center leading-tight">
-                                {currentStudent[el.variableKey as keyof typeof currentStudent] ||
-                                  `{{${el.variableKey}}}`}
+                                {el.variableKey === "student_name"
+                                  ? formatStudentNameWithSalutation(currentStudent.student_name)
+                                  : currentStudent[el.variableKey as keyof typeof currentStudent] ||
+                                    `{{${el.variableKey}}}`}
                               </span>
                             ) : (
                               <span className="font-bold text-sky-900 bg-sky-50 border border-sky-200 px-1 py-0.5 rounded shadow-2xs text-center leading-tight font-sans">

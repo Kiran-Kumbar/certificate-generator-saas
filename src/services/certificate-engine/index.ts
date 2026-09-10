@@ -26,6 +26,24 @@ function parseColorToRgb(hexColor?: string) {
 import { formatCertificateDate } from "@/lib/format-date";
 export { formatCertificateDate };
 
+export function formatStudentNameWithSalutation(name: unknown): string {
+  if (!name) return "";
+  let str = String(name).trim();
+  if (!str) return "";
+
+  // Normalize any variation of Mr./ Ms. or Mr./Ms. or Mr / Ms
+  if (/^mr\.?\s*\/\s*ms\.?\s+/i.test(str)) {
+    return str.replace(/^mr\.?\s*\/\s*ms\.?\s+/i, "Mr./ Ms. ");
+  }
+
+  // If starts with single prefix like Mr., Ms., Mrs., or Miss, replace with Mr./ Ms.
+  if (/^(mr\.?|ms\.?|mrs\.?|miss)\s+/i.test(str)) {
+    str = str.replace(/^(mr\.?|ms\.?|mrs\.?|miss)\s+/i, "");
+  }
+
+  return `Mr./ Ms. ${str}`;
+}
+
 export interface TextSegment {
   text: string;
   color: string;
@@ -286,8 +304,10 @@ export async function generateCertificateEngine(
   }
 
   // Alias fallbacks for standard certificate fields
-  if (!normalizedData.student_name && normalizedData.name) {
-    normalizedData.student_name = normalizedData.name;
+  if (normalizedData.student_name) {
+    normalizedData.student_name = formatStudentNameWithSalutation(normalizedData.student_name);
+  } else if (normalizedData.name) {
+    normalizedData.student_name = formatStudentNameWithSalutation(normalizedData.name);
   }
   if (!normalizedData.college_name && normalizedData.college) {
     normalizedData.college_name = normalizedData.college;
@@ -311,16 +331,24 @@ export async function generateCertificateEngine(
     if (el.type === "text" || el.type === "variable") {
       let rawText = "";
 
+      const isStudentName = el.id === "el_student_name" || el.variableKey === "student_name";
+
       if (el.type === "variable" && el.variableKey) {
         if (el.variableKey === "program_text") {
           rawText = String(normalizedData.program_text || el.content || "");
         } else {
           const val = normalizedData[el.variableKey];
-          const rawVal = val !== undefined && val !== null ? String(val).trim() : (el.content || "");
+          let rawVal = val !== undefined && val !== null ? String(val).trim() : (el.content || "");
+          if (isStudentName && rawVal) {
+            rawVal = formatStudentNameWithSalutation(rawVal);
+          }
           rawText = rawVal;
         }
       } else {
         rawText = el.content || "";
+        if (isStudentName && rawText) {
+          rawText = formatStudentNameWithSalutation(rawText);
+        }
         // Clean up legacy spaced ribbon title
         if (rawText.replace(/\s+/g, "") === "THISISTOCERTIFYTHAT") {
           rawText = "THIS IS TO CERTIFY THAT";
@@ -420,7 +448,7 @@ export async function generateCertificateEngine(
         genericFallback = "monospace";
       }
 
-      const defaultColor = el.style?.color || "#000000";
+      const defaultColor = isStudentName ? "#03046e" : (el.style?.color || "#000000");
       const lineHeightMultiplier = typeof el.style?.lineHeight === "number" ? el.style.lineHeight : 1.45;
       const lineHeight = finalFontSize * lineHeightMultiplier;
 

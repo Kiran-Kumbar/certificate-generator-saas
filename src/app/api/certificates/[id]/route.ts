@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { Certificate, CertificateSetup, Template, User } from "@/models";
-import { generateCertificateEngine, getAppBaseUrl } from "@/services/certificate-engine";
+import { generateCertificateEngine, getAppBaseUrl, formatStudentNameWithSalutation } from "@/services/certificate-engine";
 import { uploadToCloudinary } from "@/services/storage";
 import { verifyAuthToken } from "@/lib/auth";
 import { CertificateElement } from "@/types/template";
@@ -47,10 +47,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     };
 
     if (studentName) {
-      updatedRecipientData["student_name"] = studentName;
+      updatedRecipientData["student_name"] = formatStudentNameWithSalutation(studentName);
     }
 
-    const finalStudentName = studentName || String(updatedRecipientData["student_name"] || cert.studentName);
+    const finalStudentName = formatStudentNameWithSalutation(
+      studentName || String(updatedRecipientData["student_name"] || cert.studentName)
+    );
 
     // Update fields in DB
     cert.studentName = finalStudentName;

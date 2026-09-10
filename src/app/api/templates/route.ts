@@ -6,6 +6,7 @@ import { verifyAuthToken } from "@/lib/auth";
 import { PDFDocument } from "pdf-lib";
 import fs from "fs";
 import path from "path";
+import { CertificateElement } from "@/types/template";
 
 function ensureSoftmuskTemplateAssets() {
   try {
@@ -37,12 +38,13 @@ function ensureSoftmuskTemplateAssets() {
   }
 }
 
-export function getSoftmuskInternshipElements() {
+export function getSoftmuskInternshipElements(): CertificateElement[] {
   return [
     {
       id: "el_student_name",
       type: "variable",
       variableKey: "student_name",
+      content: "Mr./ Ms. Rahul Sharma",
       position: { x: 105, y: 280, width: 385, height: 42 },
       style: {
         fontSize: 26,
@@ -148,12 +150,13 @@ export function getSoftmuskInternshipElements() {
   ];
 }
 
-export function getSoftmuskCollaborationElements() {
+export function getSoftmuskCollaborationElements(): CertificateElement[] {
   return [
     {
       id: "el_student_name",
       type: "variable",
       variableKey: "student_name",
+      content: "Mr./ Ms. Rahul Sharma",
       position: { x: 105, y: 280, width: 385, height: 42 },
       style: {
         fontSize: 26,
@@ -259,12 +262,13 @@ export function getSoftmuskCollaborationElements() {
   ];
 }
 
-export function getSoftmuskWorkshopElements() {
+export function getSoftmuskWorkshopElements(): CertificateElement[] {
   return [
     {
       id: "el_student_name",
       type: "variable",
       variableKey: "student_name",
+      content: "Mr./ Ms. Rahul Sharma",
       position: { x: 105, y: 280, width: 385, height: 42 },
       style: {
         fontSize: 26,
@@ -624,8 +628,14 @@ export async function GET(req: Request) {
             e.id === "el_student_name" &&
             (Number((e.position as any)?.y) >= 290 || Number((e.position as any)?.height) !== 42)
         );
+        const nameEl = els.find((e) => e.id === "el_student_name");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const nameColor = (nameEl?.style as any)?.color;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const nameContent = (nameEl as any)?.content;
+        const needsSalutationUpdate = !nameContent?.includes("Mr./ Ms.") || nameColor !== "#03046e";
 
-        if (hasOldLabel || hasOldBg || needsNamePosUpdate) {
+        if (hasOldLabel || hasOldBg || needsNamePosUpdate || needsSalutationUpdate) {
           await Template.updateOne(
             { _id: existing._id },
             {

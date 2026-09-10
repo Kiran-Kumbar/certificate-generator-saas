@@ -44,6 +44,65 @@ interface SetupVariable {
   required?: boolean;
 }
 
+function formatStudentNameWithSalutation(name: unknown): string {
+  if (!name) return "";
+  let str = String(name).trim();
+  if (!str) return "";
+
+  // Normalize any variation of Mr./ Ms. or Mr./Ms. or Mr / Ms
+  if (/^mr\.?\s*\/\s*ms\.?\s+/i.test(str)) {
+    return str.replace(/^mr\.?\s*\/\s*ms\.?\s+/i, "Mr./ Ms. ");
+  }
+
+  // If starts with single prefix like Mr., Ms., Mrs., or Miss, replace with Mr./ Ms.
+  if (/^(mr\.?|ms\.?|mrs\.?|miss)\s+/i.test(str)) {
+    str = str.replace(/^(mr\.?|ms\.?|mrs\.?|miss)\s+/i, "");
+  }
+
+  return `Mr./ Ms. ${str}`;
+}
+
+function renderRichPreviewText(content: string, isStudentName: boolean) {
+  if (isStudentName) {
+    return <span style={{ color: "#03046e", fontWeight: 700 }}>{content}</span>;
+  }
+  // Split by <blue>...</blue>, <b>...</b>, <gold>...</gold>, and newlines
+  const parts = content.split(/(<blue>[\s\S]*?<\/blue>|<b>[\s\S]*?<\/b>|<gold>[\s\S]*?<\/gold>|\n)/g);
+  return (
+    <>
+      {parts.map((part, idx) => {
+        if (!part) return null;
+        if (part === "\n") return <br key={idx} />;
+        if (part.startsWith("<blue>") && part.endsWith("</blue>")) {
+          const inner = part.slice(6, -7);
+          return (
+            <span key={idx} style={{ color: "#03046e", fontWeight: 700 }}>
+              {inner}
+            </span>
+          );
+        }
+        if (part.startsWith("<gold>") && part.endsWith("</gold>")) {
+          const inner = part.slice(6, -7);
+          return (
+            <span key={idx} style={{ color: "#c59b27", fontWeight: 700 }}>
+              {inner}
+            </span>
+          );
+        }
+        if (part.startsWith("<b>") && part.endsWith("</b>")) {
+          const inner = part.slice(3, -4);
+          return (
+            <strong key={idx} className="font-bold text-slate-900">
+              {inner}
+            </strong>
+          );
+        }
+        return <span key={idx}>{part}</span>;
+      })}
+    </>
+  );
+}
+
 interface Setup {
   _id: string;
   name: string;
@@ -1074,9 +1133,17 @@ export default function CertificatesPage() {
                             // Resolve live text accurately
                             let text = "";
                             if (el.type === "variable" && el.variableKey) {
-                              text = dynamicFormData[el.variableKey] || `[${el.variableKey}]`;
+                              if (isStudentName) {
+                                const val = dynamicFormData[el.variableKey] || dynamicFormData.name || "Rahul Sharma";
+                                text = formatStudentNameWithSalutation(val);
+                              } else {
+                                text = dynamicFormData[el.variableKey] || `[${el.variableKey}]`;
+                              }
                             } else {
                               text = el.content || "";
+                              if (isStudentName && text) {
+                                text = formatStudentNameWithSalutation(text);
+                              }
                               if (text.replace(/\s+/g, "") === "THISISTOCERTIFYTHAT") {
                                 text = "THIS IS TO CERTIFY THAT";
                               }
@@ -1105,21 +1172,21 @@ export default function CertificatesPage() {
                                   textAlign: (el.style?.textAlign as React.CSSProperties["textAlign"]) || "center",
                                   fontFamily: el.style?.fontFamily?.toLowerCase().includes("times") ? "serif" : "sans-serif",
                                   fontWeight: isStudentName ? 700 : isCertifyTitle ? 700 : el.style?.fontWeight || 400,
-                                  color: el.style?.color || (isStudentName ? "#002b66" : "#1e293b"),
+                                  color: isStudentName ? "#03046e" : (el.style?.color || "#1e293b"),
                                   fontSize: `${fontSizePx}px`,
                                   lineHeight: 1.25,
                                 }}
                               >
                                 <div className="w-full text-center px-1">
-                                  {text}
+                                  {renderRichPreviewText(text, isStudentName)}
                                 </div>
                               </div>
                             );
                           })
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-2">
-                            <div className="font-bold text-slate-900 text-sm bg-white/90 px-3 py-1 rounded shadow">
-                              {dynamicFormData.student_name || "Student Name Placeholder"}
+                            <div className="font-bold text-[#03046e] text-sm bg-white/90 px-3 py-1 rounded shadow">
+                              {formatStudentNameWithSalutation(dynamicFormData.student_name || "Rahul Sharma")}
                             </div>
                           </div>
                         )}
