@@ -210,9 +210,7 @@ export async function GET(req: Request) {
           const needsUpdate =
             !existing.templateId ||
             String(existing.templateId) !== String(matchingTmpl._id) ||
-            existing.name !== setupCfg.name ||
-            existing.programText !== setupCfg.programText ||
-            !String(existing.programText || "").includes("<blue>");
+            existing.name !== setupCfg.name;
           if (needsUpdate) {
             await CertificateSetup.updateOne(
               { _id: existing._id },

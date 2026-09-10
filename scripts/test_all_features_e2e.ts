@@ -242,7 +242,7 @@ async function runTest() {
       certificateNumber: `SM-2026-TEST-${tc.filePrefix.toUpperCase()}`,
       width: tmpl.width,
       height: tmpl.height,
-      baseUrl: "https://certificate-generator-rust-zeta.vercel.app",
+      baseUrl: "https://smc.onqeva.in",
     });
 
     const pngPath = path.join(testOutputDir, `${tc.filePrefix}.png`);

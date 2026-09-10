@@ -61,7 +61,7 @@ async function testAll3Templates() {
     certificateNumber: "SM-2026-000001",
     width: 595.28,
     height: 841.89,
-    baseUrl: "https://certificate-generator-rust-zeta.vercel.app",
+    baseUrl: "https://smc.onqeva.in",
     verificationToken: "token_internship_001",
   });
   fs.writeFileSync("test_internship.png", res1.pngBuffer);
@@ -117,7 +117,7 @@ async function testAll3Templates() {
     certificateNumber: "SM-2026-COL-001",
     width: 595.28,
     height: 841.89,
-    baseUrl: "https://certificate-generator-rust-zeta.vercel.app",
+    baseUrl: "https://smc.onqeva.in",
     verificationToken: "token_collab_001",
   });
   fs.writeFileSync("test_collab.png", res2.pngBuffer);
@@ -173,7 +173,7 @@ async function testAll3Templates() {
     certificateNumber: "SM-2026-WS-001",
     width: 595.28,
     height: 841.89,
-    baseUrl: "https://certificate-generator-rust-zeta.vercel.app",
+    baseUrl: "https://smc.onqeva.in",
     verificationToken: "token_workshop_001",
   });
   fs.writeFileSync("test_workshop.png", res3.pngBuffer);

@@ -93,14 +93,19 @@ export interface GenerateEngineOptions {
 export function getAppBaseUrl(req?: Request, customUrl?: string): string {
   if (customUrl && typeof customUrl === "string") {
     const clean = customUrl.replace(/[\r\n\t\s]+/g, "").replace(/\/+$/, "");
-    if (clean) return clean;
+    if (clean && !clean.includes("localhost")) return clean;
+  }
+
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/[\r\n\t\s]+/g, "").replace(/\/+$/, "");
+  if (envUrl && !envUrl.includes("localhost")) {
+    return envUrl;
   }
 
   if (req) {
     try {
       const proto = req.headers.get("x-forwarded-proto") || "https";
       const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
-      if (host) {
+      if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
         const cleanHost = host.replace(/[\r\n\t\s]+/g, "");
         return `${proto}://${cleanHost}`.replace(/\/+$/, "");
       }
@@ -109,13 +114,11 @@ export function getAppBaseUrl(req?: Request, customUrl?: string): string {
     }
   }
 
-  const rawEnv =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "") ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
-    "http://localhost:3000";
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL.replace(/[\r\n\t\s]+/g, "").replace(/\/+$/, "")}`;
+  }
 
-  return rawEnv.replace(/[\r\n\t\s]+/g, "").replace(/\/+$/, "");
+  return "https://smc.onqeva.in";
 }
 
 export async function generateCertificateEngine(

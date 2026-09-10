@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { Certificate, User } from "@/models";
 import { verifyAuthToken } from "@/lib/auth";
+import { getAppBaseUrl } from "@/services/certificate-engine";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -20,9 +21,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const certNumber = cert.certificateNumber;
     const recipientEmail = (recipientData.student_email as string) || (recipientData.email as string) || "";
 
-    const host = req.headers.get("host") || "localhost:3000";
-    const protocol = host.includes("localhost") ? "http" : "https";
-    const verifyUrl = `${protocol}://${host}/verify/${cert.verificationToken}`;
+    const baseUrl = getAppBaseUrl(req);
+    const verifyUrl = `${baseUrl}/verify/${cert.verificationToken}`;
     const pdfDownloadUrl = cert.pdfUrl;
 
     const subject = `Internship Completion Certificate - ${studentName} | Softmusk Info Pvt. Ltd.`;

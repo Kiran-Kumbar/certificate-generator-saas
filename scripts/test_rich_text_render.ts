@@ -104,7 +104,7 @@ async function testRichRender() {
     certificateNumber: "SM-2026-RICH-001",
     width: 595.28,
     height: 841.89,
-    baseUrl: "https://certificate-generator-rust-zeta.vercel.app",
+    baseUrl: "https://smc.onqeva.in",
   });
 
   fs.writeFileSync("test_rich.png", res.pngBuffer);
