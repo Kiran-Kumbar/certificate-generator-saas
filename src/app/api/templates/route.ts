@@ -617,8 +617,14 @@ export async function GET(req: Request) {
         const hasOldLabel = els.some((e) => e.id === "el_certify_label");
         const hasOldBg =
           existing.backgroundUrl?.includes("softmusk-template.png") ||
-          existing.backgroundUrl?.includes("media_1788889318565");
-        if (hasOldLabel || hasOldBg) {
+          existing.backgroundUrl?.includes("media_1788889318565") ||
+          existing.backgroundUrl !== official.backgroundUrl;
+        const needsElementsUpdate =
+          !existing.elements ||
+          els.length === 0 ||
+          els.some((e) => e.id === "el_para_1" && !String(e.content || "").includes("<blue>"));
+
+        if (hasOldLabel || hasOldBg || needsElementsUpdate) {
           await Template.updateOne(
             { _id: existing._id },
             {
@@ -626,6 +632,8 @@ export async function GET(req: Request) {
                 name: official.name,
                 backgroundUrl: official.backgroundUrl,
                 backgroundPublicId: official.backgroundPublicId,
+                width: official.width,
+                height: official.height,
                 elements: official.getElements(),
               },
             }
