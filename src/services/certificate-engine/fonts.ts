@@ -22,6 +22,8 @@ export function registerBundledFonts() {
       { file: "OpenSans-BoldItalic.ttf", family: "Helvetica", weight: "700", style: "italic" },
       { file: "PlayfairDisplay-Regular.ttf", family: "Times-Roman", weight: "400", style: "normal" },
       { file: "PlayfairDisplay-Bold.ttf", family: "Times-Roman", weight: "700", style: "normal" },
+      { file: "PlayfairDisplay-Regular.ttf", family: "Times", weight: "400", style: "normal" },
+      { file: "PlayfairDisplay-Bold.ttf", family: "Times", weight: "700", style: "normal" },
       { file: "PlayfairDisplay-Regular.ttf", family: "Times New Roman", weight: "400", style: "normal" },
       { file: "PlayfairDisplay-Bold.ttf", family: "Times New Roman", weight: "700", style: "normal" },
       { file: "PlayfairDisplay-Regular.ttf", family: "Georgia", weight: "400", style: "normal" },

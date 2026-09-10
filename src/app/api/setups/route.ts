@@ -130,81 +130,107 @@ export async function GET(req: Request) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const institutionId = (user?.institutionId as any)?._id || user?.institutionId || auth.institutionId;
 
-    let setups = await CertificateSetup.find({ institutionId })
-      .populate("templateId")
-      .sort({ createdAt: -1 });
+    const allTemplates = await Template.find({ institutionId }).sort({ createdAt: -1 });
 
-    const activeTemplate = await Template.findOne({ institutionId }).sort({ createdAt: -1 });
-
-    // Repair any setup with missing/stale templateId
-    if (activeTemplate) {
-      let neededRepair = false;
-      for (const s of setups) {
-        if (!s.templateId) {
-          await CertificateSetup.updateOne({ _id: s._id }, { $set: { templateId: activeTemplate._id } });
-          neededRepair = true;
-        }
-      }
-      if (neededRepair) {
-        setups = await CertificateSetup.find({ institutionId })
-          .populate("templateId")
-          .sort({ createdAt: -1 });
-      }
-    }
-
-    // Auto-seed Softmusk setup if empty
-    if (setups.length === 0 && activeTemplate) {
-      const seededSetup = await CertificateSetup.create({
-        institutionId,
+    const DEFAULT_SETUPS_CONFIG = [
+      {
         name: "Softmusk Internship Program (Official)",
-        templateId: activeTemplate._id,
+        templateMatch: "Internship Certificate",
         programText:
-          "A student of {{college_name}}, {{dept}} has successfully completed his/her internship from {{start_date}} to {{end_date}} at “Softmusk Info Pvt. Ltd, Belagavi, Karnataka.”\n\nWas able to successfully participate in and accomplish all the tasks required for the project entitled “{{domain}}” through which he/she was able to showcase his/her great work and team player skills.\n\nWe at Softmusk Info Pvt. Ltd have thoroughly enjoyed having him/her as an intern and we wish him/her all the best in his/her future endeavors.",
+          "A student of {{college_name}}, {{dept}} has successfully completed his/her internship from {{start_date}} to {{end_date}} at \u201cSoftmusk Info Pvt. Ltd Belagavi, Karnataka.\u201d\n\nWas able to successfully participate in and accomplish all the tasks required for the project entitled \u201c{{domain}}\u201d through which he/she was able to showcase his/her great work and team player skills.\n\nWe at Softmusk Info Pvt. Ltd have thoroughly enjoyed having him/her as an intern and we wish him/her all the best in his/her future endeavors.",
         variables: [
           { key: "student_name", label: "Student Name", type: "text", required: true },
-          { key: "reg_no", label: "Reg No", type: "text", required: true },
+          { key: "reg_no", label: "Reg No", type: "text", required: false },
           { key: "college_name", label: "College Name", type: "text", required: true },
-          { key: "dept", label: "Dept", type: "text", required: true },
+          { key: "dept", label: "Dept", type: "text", required: false },
           { key: "domain", label: "Domain", type: "text", required: true },
           { key: "start_date", label: "Start Date", type: "date", required: true },
           { key: "end_date", label: "End Date", type: "date", required: true },
         ],
-        createdBy: user?._id || auth.userId,
-      });
-      setups = [await seededSetup.populate("templateId")];
-    } else {
-      // Migrate existing setups: if any setup has the old variables without reg_no, update it
-      for (const s of setups) {
-        const hasRegNo = s.variables?.some((v: { key: string }) => v.key === "reg_no");
-        const hasOfficialName =
-          s.name === "Softmusk Internship Program" || s.name === "Softmusk Internship Program (Official)";
-        if (hasOfficialName && !hasRegNo) {
-          await CertificateSetup.updateOne(
-            { _id: s._id },
-            {
-              $set: {
-                name: "Softmusk Internship Program (Official)",
-                programText:
-                  "A student of {{college_name}}, {{dept}} has successfully completed his/her internship from {{start_date}} to {{end_date}} at “Softmusk Info Pvt. Ltd, Belagavi, Karnataka.”\n\nWas able to successfully participate in and accomplish all the tasks required for the project entitled “{{domain}}” through which he/she was able to showcase his/her great work and team player skills.\n\nWe at Softmusk Info Pvt. Ltd have thoroughly enjoyed having him/her as an intern and we wish him/her all the best in his/her future endeavors.",
-                variables: [
-                  { key: "student_name", label: "Student Name", type: "text", required: true },
-                  { key: "reg_no", label: "Reg No", type: "text", required: true },
-                  { key: "college_name", label: "College Name", type: "text", required: true },
-                  { key: "dept", label: "Dept", type: "text", required: true },
-                  { key: "domain", label: "Domain", type: "text", required: true },
-                  { key: "start_date", label: "Start Date", type: "date", required: true },
-                  { key: "end_date", label: "End Date", type: "date", required: true },
-                ],
-              },
-            }
-          );
+      },
+      {
+        name: "Softmusk College Internship Collaboration",
+        templateMatch: "Collaboration",
+        programText:
+          "A student of {{college_name}}, {{dept}} has successfully completed the joint industry internship program from {{start_date}} to {{end_date}} in collaboration with \u201cSoftmusk Info Pvt. Ltd Belagavi, Karnataka.\u201d\n\nWas able to successfully participate in and accomplish all the tasks required for the collaborative project entitled \u201c{{domain}}\u201d through which he/she showcased exemplary technical capability and team leadership.\n\nWe at Softmusk Info Pvt. Ltd have thoroughly enjoyed collaborating with the student and wish him/her all the best in his/her future endeavors.",
+        variables: [
+          { key: "student_name", label: "Student Name", type: "text", required: true },
+          { key: "reg_no", label: "Reg No", type: "text", required: false },
+          { key: "college_name", label: "College Name", type: "text", required: true },
+          { key: "dept", label: "Dept", type: "text", required: false },
+          { key: "domain", label: "Domain", type: "text", required: true },
+          { key: "start_date", label: "Start Date", type: "date", required: true },
+          { key: "end_date", label: "End Date", type: "date", required: true },
+        ],
+      },
+      {
+        name: "Softmusk Technical Workshop & Training",
+        templateMatch: "Workshop",
+        programText:
+          "A student of {{college_name}}, {{dept}} has successfully attended and completed the intensive technical workshop on \u201c{{domain}}\u201d conducted by \u201cSoftmusk Info Pvt. Ltd Belagavi, Karnataka\u201d from {{start_date}} to {{end_date}}.\n\nDemonstrated commendable dedication, active participation, and accomplished all practical lab modules, hands-on tasks, and project benchmarks.\n\nWe congratulate him/her on successfully completing this program and wish him/her continued success in all academic and professional pursuits.",
+        variables: [
+          { key: "student_name", label: "Student Name", type: "text", required: true },
+          { key: "reg_no", label: "Reg No", type: "text", required: false },
+          { key: "college_name", label: "College Name", type: "text", required: true },
+          { key: "dept", label: "Dept", type: "text", required: false },
+          { key: "domain", label: "Domain", type: "text", required: true },
+          { key: "start_date", label: "Start Date", type: "date", required: true },
+          { key: "end_date", label: "End Date", type: "date", required: true },
+        ],
+      },
+    ];
+
+    for (const setupCfg of DEFAULT_SETUPS_CONFIG) {
+      const matchingTmpl =
+        allTemplates.find((t) => t.name.includes(setupCfg.templateMatch)) || allTemplates[0];
+
+      if (matchingTmpl) {
+        const existing = await CertificateSetup.findOne({
+          institutionId,
+          $or: [
+            { name: setupCfg.name },
+            ...(setupCfg.name.includes("Internship Program")
+              ? [{ name: "Softmusk Internship Program" }]
+              : []),
+          ],
+        });
+
+        if (!existing) {
+          await CertificateSetup.create({
+            institutionId,
+            name: setupCfg.name,
+            templateId: matchingTmpl._id,
+            programText: setupCfg.programText,
+            variables: setupCfg.variables,
+            folderRule: "/{{year}}/{{program}}",
+            createdBy: user?._id || auth.userId,
+          });
+        } else {
+          // Keep templateId mapped to the correct template and update program text
+          const needsUpdate =
+            !existing.templateId ||
+            String(existing.templateId) !== String(matchingTmpl._id) ||
+            existing.name !== setupCfg.name;
+          if (needsUpdate) {
+            await CertificateSetup.updateOne(
+              { _id: existing._id },
+              {
+                $set: {
+                  name: setupCfg.name,
+                  templateId: matchingTmpl._id,
+                  programText: setupCfg.programText,
+                  variables: setupCfg.variables,
+                },
+              }
+            );
+          }
         }
       }
-      // Re-fetch after potential migration
-      setups = await CertificateSetup.find({ institutionId })
-        .populate("templateId")
-        .sort({ createdAt: -1 });
     }
+
+    const setups = await CertificateSetup.find({ institutionId })
+      .populate("templateId")
+      .sort({ createdAt: -1 });
 
     return NextResponse.json({ success: true, setups });
   } catch (err: unknown) {

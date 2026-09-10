@@ -41,8 +41,22 @@ export function calculateSmartFit(text: string, options: MeasureOptions): SmartF
 
   let bestLines: string[] = [cleanText];
 
+  const lowerFamily = (options.fontFamily || "").toLowerCase();
+  let canvasFamily = '"Open Sans"';
+  let genericFallback = "sans-serif";
+  if (lowerFamily.includes("times") || lowerFamily.includes("serif")) {
+    canvasFamily = "Times";
+    genericFallback = "serif";
+  } else if (lowerFamily.includes("courier") || lowerFamily.includes("mono")) {
+    canvasFamily = "Courier";
+    genericFallback = "monospace";
+  } else if (lowerFamily.includes("playfair")) {
+    canvasFamily = '"Playfair Display"';
+    genericFallback = "serif";
+  }
+
   while (currentFontSize >= minFontSize) {
-    ctx.font = `${options.fontWeight || 400} ${currentFontSize}px "${options.fontFamily || "Open Sans"}"`;
+    ctx.font = `${options.fontWeight || 400} ${currentFontSize}px ${canvasFamily}, ${genericFallback}`;
 
     const textWidth = ctx.measureText(cleanText).width;
 

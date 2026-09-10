@@ -136,32 +136,12 @@ const SAMPLE_STUDENTS = [
 
 const PRESET_SOFTMUSK_ELEMENTS: CertificateElement[] = [
   {
-    id: "el_certify_label",
-    type: "text",
-    content: "THIS IS TO CERTIFY THAT",
-    position: { x: 58, y: 348, width: 480, height: 22 },
-    style: {
-      fontSize: 11,
-      fontFamily: "Helvetica",
-      fontWeight: 700,
-      textAlign: "center",
-      color: "#1e293b",
-      letterSpacing: 2,
-    },
-    smartFit: {
-      enabled: true,
-      maxLines: 1,
-      minFontSize: 9,
-      wordWrap: false,
-    },
-  },
-  {
     id: "el_student_name",
     type: "variable",
     variableKey: "student_name",
-    position: { x: 58, y: 374, width: 480, height: 42 },
+    position: { x: 45, y: 298, width: 505, height: 42 },
     style: {
-      fontSize: 28,
+      fontSize: 26,
       fontFamily: "Times-Roman",
       fontWeight: 700,
       textAlign: "center",
@@ -175,38 +155,18 @@ const PRESET_SOFTMUSK_ELEMENTS: CertificateElement[] = [
     },
   },
   {
-    id: "el_reg_no",
-    type: "variable",
-    variableKey: "reg_no",
-    position: { x: 58, y: 420, width: 480, height: 22 },
-    style: {
-      fontSize: 11,
-      fontFamily: "Helvetica",
-      fontWeight: 400,
-      textAlign: "center",
-      color: "#475569",
-      letterSpacing: 1,
-    },
-    smartFit: {
-      enabled: true,
-      maxLines: 1,
-      minFontSize: 9,
-      wordWrap: false,
-    },
-  },
-  {
     id: "el_para_1",
     type: "text",
     content:
-      "A student of {{college_name}}, {{dept}} has successfully completed his/her internship from {{start_date}} to {{end_date}} at “Softmusk Info Pvt. Ltd, Belagavi, Karnataka.”",
-    position: { x: 58, y: 450, width: 480, height: 60 },
+      "A student of {{college_name}}, {{dept}} has successfully completed his/her internship from {{start_date}} to {{end_date}} at \u201cSoftmusk Info Pvt. Ltd Belagavi, Karnataka.\u201d",
+    position: { x: 45, y: 350, width: 505, height: 62 },
     style: {
-      fontSize: 12.5,
+      fontSize: 13,
       fontFamily: "Times-Roman",
       fontWeight: 400,
       textAlign: "center",
       color: "#1e293b",
-      lineHeight: 1.4,
+      lineHeight: 1.45,
     },
     smartFit: {
       enabled: true,
@@ -219,15 +179,15 @@ const PRESET_SOFTMUSK_ELEMENTS: CertificateElement[] = [
     id: "el_para_2",
     type: "text",
     content:
-      "Was able to successfully participate in and accomplish all the tasks required for the project entitled “{{domain}}” through which he/she was able to showcase his/her great work and team player skills.",
-    position: { x: 58, y: 520, width: 480, height: 60 },
+      "Was able to successfully participate in and accomplish all the tasks required for the project entitled \u201c{{domain}}\u201d through which he/she was able to showcase his/her great work and team player skills.",
+    position: { x: 45, y: 418, width: 505, height: 55 },
     style: {
-      fontSize: 12.5,
+      fontSize: 13,
       fontFamily: "Times-Roman",
       fontWeight: 400,
       textAlign: "center",
       color: "#1e293b",
-      lineHeight: 1.4,
+      lineHeight: 1.45,
     },
     smartFit: {
       enabled: true,
@@ -241,14 +201,14 @@ const PRESET_SOFTMUSK_ELEMENTS: CertificateElement[] = [
     type: "text",
     content:
       "We at Softmusk Info Pvt. Ltd have thoroughly enjoyed having him/her as an intern and we wish him/her all the best in his/her future endeavors.",
-    position: { x: 58, y: 588, width: 480, height: 40 },
+    position: { x: 45, y: 478, width: 505, height: 45 },
     style: {
-      fontSize: 12.5,
+      fontSize: 13,
       fontFamily: "Times-Roman",
       fontWeight: 400,
       textAlign: "center",
       color: "#1e293b",
-      lineHeight: 1.4,
+      lineHeight: 1.45,
     },
     smartFit: {
       enabled: true,
@@ -260,7 +220,26 @@ const PRESET_SOFTMUSK_ELEMENTS: CertificateElement[] = [
   {
     id: "el_qr_token",
     type: "qr",
-    position: { x: 248, y: 752, width: 100, height: 100 },
+    position: { x: 468, y: 525, width: 72, height: 72 },
+  },
+  {
+    id: "el_qr_label",
+    type: "text",
+    content: "Scan the QR code to verify this certificate",
+    position: { x: 430, y: 600, width: 148, height: 22 },
+    style: {
+      fontSize: 7.5,
+      fontFamily: "Helvetica",
+      fontWeight: 400,
+      textAlign: "center",
+      color: "#475569",
+    },
+    smartFit: {
+      enabled: true,
+      maxLines: 2,
+      minFontSize: 6,
+      wordWrap: true,
+    },
   },
 ];
 

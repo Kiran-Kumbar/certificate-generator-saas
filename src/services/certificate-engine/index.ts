@@ -99,7 +99,11 @@ export async function generateCertificateEngine(
       let bgSource: string | Buffer = options.backgroundUrl;
       if (options.backgroundUrl.startsWith("/")) {
         const local = path.join(process.cwd(), "public", options.backgroundUrl.replace(/^\//, ""));
-        if (fs.existsSync(local)) bgSource = local;
+        if (fs.existsSync(local)) {
+          bgSource = local;
+        } else {
+          bgSource = `${cleanBaseUrl}${options.backgroundUrl}`;
+        }
       }
       const bgImg = await loadImage(bgSource);
       ctx.drawImage(bgImg, 0, 0, docWidth, docHeight);
@@ -129,32 +133,32 @@ export async function generateCertificateEngine(
 
   if (options.backgroundUrl) {
     try {
-      let embeddedBg;
+      let bgBytes: Buffer | Uint8Array | null = null;
       if (options.backgroundUrl.startsWith("data:")) {
         const base64Data = options.backgroundUrl.split(",")[1];
-        const bgBytes = Buffer.from(base64Data, "base64");
-        if (options.backgroundUrl.startsWith("data:image/png")) {
-          embeddedBg = await pdfDoc.embedPng(bgBytes);
-        } else {
-          embeddedBg = await pdfDoc.embedJpg(bgBytes);
-        }
+        bgBytes = Buffer.from(base64Data, "base64");
       } else if (options.backgroundUrl.startsWith("/")) {
         const localPath = path.join(process.cwd(), "public", options.backgroundUrl.replace(/^\//, ""));
         if (fs.existsSync(localPath)) {
-          const bgBytes = fs.readFileSync(localPath);
-          embeddedBg = options.backgroundUrl.endsWith(".png")
-            ? await pdfDoc.embedPng(bgBytes)
-            : await pdfDoc.embedJpg(bgBytes);
+          bgBytes = fs.readFileSync(localPath);
+        } else {
+          const remoteUrl = `${cleanBaseUrl}${options.backgroundUrl}`;
+          const res = await fetch(remoteUrl);
+          if (res.ok) {
+            bgBytes = Buffer.from(await res.arrayBuffer());
+          }
         }
       } else {
-        const bgImageBytes = await fetch(options.backgroundUrl).then((res) => res.arrayBuffer());
-        if (options.backgroundUrl.endsWith(".png")) {
-          embeddedBg = await pdfDoc.embedPng(bgImageBytes);
-        } else {
-          embeddedBg = await pdfDoc.embedJpg(bgImageBytes);
+        const res = await fetch(options.backgroundUrl);
+        if (res.ok) {
+          bgBytes = Buffer.from(await res.arrayBuffer());
         }
       }
-      if (embeddedBg) {
+
+      if (bgBytes && bgBytes.length > 0) {
+        // Detect PNG by magic bytes 0x89 0x50 ('%PNG')
+        const isPng = bgBytes[0] === 0x89 && bgBytes[1] === 0x50;
+        const embeddedBg = isPng ? await pdfDoc.embedPng(bgBytes) : await pdfDoc.embedJpg(bgBytes);
         page.drawImage(embeddedBg, {
           x: 0,
           y: 0,
@@ -252,13 +256,18 @@ export async function generateCertificateEngine(
         }
       }
 
-      // Replace mustache variables e.g. {{college_name}}, {{start_date}}, {{end_date}}, {{domain}}
+      // Replace mustache variables e.g. {{college_name}}, {{start_date}}, {{end_date}}, {{domain}}, {{dept}}
       rawText = rawText.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key) => {
         const val = normalizedData[key];
-        return val !== undefined && val !== null && val !== "" ? String(val) : `{{${key}}}`;
+        return val !== undefined && val !== null && val !== "" ? String(val) : "";
       });
 
-      rawText = rawText.replace(/[\r\n]+/g, " ").replace(/[ \t]+/g, " ").trim();
+      rawText = rawText
+        .replace(/[\r\n]+/g, " ")
+        .replace(/,\s*,/g, ",")
+        .replace(/,\s*\./g, ".")
+        .replace(/[ \t]+/g, " ")
+        .trim();
 
       const fontSize = el.style?.fontSize || 24;
       const fontFamily = el.style?.fontFamily || "Helvetica";
@@ -289,11 +298,26 @@ export async function generateCertificateEngine(
 
       // Render to Canvas (PNG)
       const fontPrefix = isItalic ? "italic " : "";
-      ctx.font = `${fontPrefix}${fontWeight} ${fitResult.finalFontSize}px ${fontFamily}, sans-serif`;
+      const lowerFamily = fontFamily.toLowerCase();
+      let canvasFamily = '"Open Sans"';
+      let genericFallback = "sans-serif";
+      if (lowerFamily.includes("times") || lowerFamily.includes("serif")) {
+        canvasFamily = "Times";
+        genericFallback = "serif";
+      } else if (lowerFamily.includes("courier") || lowerFamily.includes("mono")) {
+        canvasFamily = "Courier";
+        genericFallback = "monospace";
+      } else if (lowerFamily.includes("playfair")) {
+        canvasFamily = '"Playfair Display"';
+        genericFallback = "serif";
+      }
+
+      ctx.font = `${fontPrefix}${fontWeight} ${fitResult.finalFontSize}px ${canvasFamily}, ${genericFallback}`;
       ctx.fillStyle = el.style?.color || "#000000";
       ctx.textAlign = (el.style?.textAlign as CanvasTextAlign) || "left";
 
-      const lineHeight = fitResult.finalFontSize * 1.2;
+      const lineHeightMultiplier = typeof el.style?.lineHeight === "number" ? el.style.lineHeight : 1.35;
+      const lineHeight = fitResult.finalFontSize * lineHeightMultiplier;
       let startX = position.x;
       if (el.style?.textAlign === "center") startX = position.x + position.width / 2;
       if (el.style?.textAlign === "right") startX = position.x + position.width;

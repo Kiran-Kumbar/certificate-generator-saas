@@ -14,17 +14,22 @@ function ensureSoftmuskTemplateAssets() {
       fs.mkdirSync(publicTemplatesDir, { recursive: true });
     }
 
-    const destPng = path.join(publicTemplatesDir, "softmusk-template.png");
-    const artifactPng = "C:/Users/kiran/.gemini/antigravity-ide/brain/045443dd-afcf-4648-b40d-f2300c0f5d55/.tempmediaStorage/media_1788889318565.png";
-    if (fs.existsSync(artifactPng)) {
-      fs.copyFileSync(artifactPng, destPng);
-    }
+    const files = [
+      { name: "softmusk-internship-clean-bg.png", artifact: "media_1789021553205.png" },
+      { name: "softmusk-collaboration-clean-bg.png", artifact: "media_1789021553205.png" },
+      { name: "softmusk-workshop-clean-bg.png", artifact: "media_1789021553205.png" },
+    ];
 
-    const destPdf = path.join(publicTemplatesDir, "softmusk-template.pdf");
-    if (!fs.existsSync(destPdf)) {
-      const refPdf = path.join(process.cwd(), "refrence", "Softmusk Info  TEMPLATE (1).pdf");
-      if (fs.existsSync(refPdf)) {
-        fs.copyFileSync(refPdf, destPdf);
+    for (const f of files) {
+      const dest = path.join(publicTemplatesDir, f.name);
+      if (!fs.existsSync(dest)) {
+        const artPath = path.join(
+          "C:/Users/kiran/.gemini/antigravity-ide/brain/045443dd-afcf-4648-b40d-f2300c0f5d55/.user_uploaded",
+          f.artifact
+        );
+        if (fs.existsSync(artPath)) {
+          fs.copyFileSync(artPath, dest);
+        }
       }
     }
   } catch (e) {
@@ -32,88 +37,40 @@ function ensureSoftmuskTemplateAssets() {
   }
 }
 
-export function getSoftmuskDefaultElements() {
-  // Portrait A4: 595.28 pt wide × 841.89 pt tall
-  // Background PNG has: logo+header ~0–200, "Internship Certificate" title ~200–300,
-  // gold ornamental divider ~305–340, content area 345–620, 2nd divider ~625–665,
-  // signatures ~665–730, QR area ~745–830, footer text ~830
+export function getSoftmuskInternshipElements() {
   return [
-    // "THIS IS TO CERTIFY THAT" — small label above student name
-    {
-      id: "el_certify_label",
-      type: "text",
-      content: "THIS IS TO CERTIFY THAT",
-      position: { x: 60, y: 348, width: 475, height: 22 },
-      style: {
-        fontSize: 11,
-        fontFamily: "Helvetica",
-        fontWeight: 700,
-        textAlign: "center",
-        color: "#475569",
-      },
-      smartFit: {
-        enabled: false,
-        maxLines: 1,
-        minFontSize: 10,
-        wordWrap: false,
-      },
-    },
-
-    // Student Name — large, bold, dark blue, centered
     {
       id: "el_student_name",
       type: "variable",
       variableKey: "student_name",
-      position: { x: 60, y: 374, width: 475, height: 42 },
+      position: { x: 45, y: 298, width: 505, height: 42 },
       style: {
-        fontSize: 28,
+        fontSize: 26,
         fontFamily: "Times-Roman",
         fontWeight: 700,
         textAlign: "center",
-        color: "#003087",
+        color: "#002b66",
       },
       smartFit: {
         enabled: true,
         maxLines: 1,
-        minFontSize: 18,
+        minFontSize: 16,
         wordWrap: false,
       },
     },
-
-    // Reg No — smaller, centered, underneath student name
-    {
-      id: "el_reg_no",
-      type: "variable",
-      variableKey: "reg_no",
-      position: { x: 60, y: 420, width: 475, height: 22 },
-      style: {
-        fontSize: 11,
-        fontFamily: "Helvetica",
-        fontWeight: 400,
-        textAlign: "center",
-        color: "#475569",
-      },
-      smartFit: {
-        enabled: false,
-        maxLines: 1,
-        minFontSize: 10,
-        wordWrap: false,
-      },
-    },
-
-    // Para 1 — college, dept, internship dates
     {
       id: "el_para_1",
       type: "text",
       content:
-        "A student of {{college_name}}, {{dept}} has successfully completed his/her internship from {{start_date}} to {{end_date}} at \u201cSoftmusk Info Pvt. Ltd, Belagavi, Karnataka.\u201d",
-      position: { x: 65, y: 450, width: 465, height: 60 },
+        "A student of {{college_name}}, {{dept}} has successfully completed his/her internship from {{start_date}} to {{end_date}} at \u201cSoftmusk Info Pvt. Ltd Belagavi, Karnataka.\u201d",
+      position: { x: 45, y: 350, width: 505, height: 62 },
       style: {
-        fontSize: 12.5,
+        fontSize: 13,
         fontFamily: "Times-Roman",
         fontWeight: 400,
         textAlign: "center",
         color: "#1e293b",
+        lineHeight: 1.45,
       },
       smartFit: {
         enabled: true,
@@ -122,20 +79,19 @@ export function getSoftmuskDefaultElements() {
         wordWrap: true,
       },
     },
-
-    // Para 2 — domain / project title
     {
       id: "el_para_2",
       type: "text",
       content:
         "Was able to successfully participate in and accomplish all the tasks required for the project entitled \u201c{{domain}}\u201d through which he/she was able to showcase his/her great work and team player skills.",
-      position: { x: 65, y: 520, width: 465, height: 60 },
+      position: { x: 45, y: 418, width: 505, height: 55 },
       style: {
-        fontSize: 12.5,
+        fontSize: 13,
         fontFamily: "Times-Roman",
         fontWeight: 400,
         textAlign: "center",
         color: "#1e293b",
+        lineHeight: 1.45,
       },
       smartFit: {
         enabled: true,
@@ -144,20 +100,19 @@ export function getSoftmuskDefaultElements() {
         wordWrap: true,
       },
     },
-
-    // Para 3 — closing statement
     {
       id: "el_para_3",
       type: "text",
       content:
         "We at Softmusk Info Pvt. Ltd have thoroughly enjoyed having him/her as an intern and we wish him/her all the best in his/her future endeavors.",
-      position: { x: 65, y: 588, width: 465, height: 40 },
+      position: { x: 45, y: 478, width: 505, height: 45 },
       style: {
-        fontSize: 12.5,
+        fontSize: 13,
         fontFamily: "Times-Roman",
         fontWeight: 400,
         textAlign: "center",
         color: "#1e293b",
+        lineHeight: 1.45,
       },
       smartFit: {
         enabled: true,
@@ -166,15 +121,291 @@ export function getSoftmuskDefaultElements() {
         wordWrap: true,
       },
     },
-
-    // QR Code — bottom center between 2nd divider and footer text
     {
       id: "el_qr_token",
       type: "qr",
-      position: { x: 248, y: 752, width: 100, height: 100 },
+      position: { x: 468, y: 525, width: 72, height: 72 },
+    },
+    {
+      id: "el_qr_label",
+      type: "text",
+      content: "Scan the QR code to verify this certificate",
+      position: { x: 430, y: 600, width: 148, height: 22 },
+      style: {
+        fontSize: 7.5,
+        fontFamily: "Helvetica",
+        fontWeight: 400,
+        textAlign: "center",
+        color: "#475569",
+      },
+      smartFit: {
+        enabled: true,
+        maxLines: 2,
+        minFontSize: 6,
+        wordWrap: true,
+      },
     },
   ];
 }
+
+export function getSoftmuskCollaborationElements() {
+  return [
+    {
+      id: "el_student_name",
+      type: "variable",
+      variableKey: "student_name",
+      position: { x: 45, y: 298, width: 505, height: 42 },
+      style: {
+        fontSize: 26,
+        fontFamily: "Times-Roman",
+        fontWeight: 700,
+        textAlign: "center",
+        color: "#002b66",
+      },
+      smartFit: {
+        enabled: true,
+        maxLines: 1,
+        minFontSize: 16,
+        wordWrap: false,
+      },
+    },
+    {
+      id: "el_para_1",
+      type: "text",
+      content:
+        "A student of {{college_name}}, {{dept}} has successfully completed the joint industry internship program from {{start_date}} to {{end_date}} in collaboration with \u201cSoftmusk Info Pvt. Ltd Belagavi, Karnataka.\u201d",
+      position: { x: 45, y: 350, width: 505, height: 62 },
+      style: {
+        fontSize: 13,
+        fontFamily: "Times-Roman",
+        fontWeight: 400,
+        textAlign: "center",
+        color: "#1e293b",
+        lineHeight: 1.45,
+      },
+      smartFit: {
+        enabled: true,
+        maxLines: 3,
+        minFontSize: 10,
+        wordWrap: true,
+      },
+    },
+    {
+      id: "el_para_2",
+      type: "text",
+      content:
+        "Was able to successfully participate in and accomplish all the tasks required for the collaborative project entitled \u201c{{domain}}\u201d through which he/she showcased exemplary technical capability and team leadership.",
+      position: { x: 45, y: 418, width: 505, height: 55 },
+      style: {
+        fontSize: 13,
+        fontFamily: "Times-Roman",
+        fontWeight: 400,
+        textAlign: "center",
+        color: "#1e293b",
+        lineHeight: 1.45,
+      },
+      smartFit: {
+        enabled: true,
+        maxLines: 3,
+        minFontSize: 10,
+        wordWrap: true,
+      },
+    },
+    {
+      id: "el_para_3",
+      type: "text",
+      content:
+        "We at Softmusk Info Pvt. Ltd have thoroughly enjoyed collaborating with the student and wish him/her all the best in his/her future endeavors.",
+      position: { x: 45, y: 478, width: 505, height: 45 },
+      style: {
+        fontSize: 13,
+        fontFamily: "Times-Roman",
+        fontWeight: 400,
+        textAlign: "center",
+        color: "#1e293b",
+        lineHeight: 1.45,
+      },
+      smartFit: {
+        enabled: true,
+        maxLines: 2,
+        minFontSize: 10,
+        wordWrap: true,
+      },
+    },
+    {
+      id: "el_qr_token",
+      type: "qr",
+      position: { x: 468, y: 525, width: 72, height: 72 },
+    },
+    {
+      id: "el_qr_label",
+      type: "text",
+      content: "Scan the QR code to verify this certificate",
+      position: { x: 430, y: 600, width: 148, height: 22 },
+      style: {
+        fontSize: 7.5,
+        fontFamily: "Helvetica",
+        fontWeight: 400,
+        textAlign: "center",
+        color: "#475569",
+      },
+      smartFit: {
+        enabled: true,
+        maxLines: 2,
+        minFontSize: 6,
+        wordWrap: true,
+      },
+    },
+  ];
+}
+
+export function getSoftmuskWorkshopElements() {
+  return [
+    {
+      id: "el_student_name",
+      type: "variable",
+      variableKey: "student_name",
+      position: { x: 45, y: 298, width: 505, height: 42 },
+      style: {
+        fontSize: 26,
+        fontFamily: "Times-Roman",
+        fontWeight: 700,
+        textAlign: "center",
+        color: "#002b66",
+      },
+      smartFit: {
+        enabled: true,
+        maxLines: 1,
+        minFontSize: 16,
+        wordWrap: false,
+      },
+    },
+    {
+      id: "el_para_1",
+      type: "text",
+      content:
+        "A student of {{college_name}}, {{dept}} has successfully attended and completed the intensive technical workshop on \u201c{{domain}}\u201d conducted by \u201cSoftmusk Info Pvt. Ltd Belagavi, Karnataka\u201d from {{start_date}} to {{end_date}}.",
+      position: { x: 45, y: 350, width: 505, height: 62 },
+      style: {
+        fontSize: 13,
+        fontFamily: "Times-Roman",
+        fontWeight: 400,
+        textAlign: "center",
+        color: "#1e293b",
+        lineHeight: 1.45,
+      },
+      smartFit: {
+        enabled: true,
+        maxLines: 3,
+        minFontSize: 10,
+        wordWrap: true,
+      },
+    },
+    {
+      id: "el_para_2",
+      type: "text",
+      content:
+        "Demonstrated commendable dedication, active participation, and accomplished all practical lab modules, hands-on tasks, and project benchmarks.",
+      position: { x: 45, y: 418, width: 505, height: 55 },
+      style: {
+        fontSize: 13,
+        fontFamily: "Times-Roman",
+        fontWeight: 400,
+        textAlign: "center",
+        color: "#1e293b",
+        lineHeight: 1.45,
+      },
+      smartFit: {
+        enabled: true,
+        maxLines: 3,
+        minFontSize: 10,
+        wordWrap: true,
+      },
+    },
+    {
+      id: "el_para_3",
+      type: "text",
+      content:
+        "We congratulate him/her on successfully completing this program and wish him/her continued success in all academic and professional pursuits.",
+      position: { x: 45, y: 478, width: 505, height: 45 },
+      style: {
+        fontSize: 13,
+        fontFamily: "Times-Roman",
+        fontWeight: 400,
+        textAlign: "center",
+        color: "#1e293b",
+        lineHeight: 1.45,
+      },
+      smartFit: {
+        enabled: true,
+        maxLines: 2,
+        minFontSize: 10,
+        wordWrap: true,
+      },
+    },
+    {
+      id: "el_qr_token",
+      type: "qr",
+      position: { x: 468, y: 525, width: 72, height: 72 },
+    },
+    {
+      id: "el_qr_label",
+      type: "text",
+      content: "Scan the QR code to verify this certificate",
+      position: { x: 430, y: 600, width: 148, height: 22 },
+      style: {
+        fontSize: 7.5,
+        fontFamily: "Helvetica",
+        fontWeight: 400,
+        textAlign: "center",
+        color: "#475569",
+      },
+      smartFit: {
+        enabled: true,
+        maxLines: 2,
+        minFontSize: 6,
+        wordWrap: true,
+      },
+    },
+  ];
+}
+
+export function getSoftmuskDefaultElements() {
+  return getSoftmuskInternshipElements();
+}
+
+export const OFFICIAL_TEMPLATES_CONFIG = [
+  {
+    name: "Softmusk Internship Certificate (Official)",
+    backgroundUrl:
+      "https://res.cloudinary.com/dhbrorn46/image/upload/v1789025233/official_templates/softmusk_internship_clean_bg.png",
+    localFallbackUrl: "/templates/softmusk-internship-clean-bg.png",
+    backgroundPublicId: "official_templates/softmusk_internship_clean_bg",
+    width: 595.28,
+    height: 841.89,
+    getElements: getSoftmuskInternshipElements,
+  },
+  {
+    name: "Softmusk College Internship Collaboration",
+    backgroundUrl:
+      "https://res.cloudinary.com/dhbrorn46/image/upload/v1789025334/official_templates/softmusk_collaboration_clean_bg.png",
+    localFallbackUrl: "/templates/softmusk-collaboration-clean-bg.png",
+    backgroundPublicId: "official_templates/softmusk_collaboration_clean_bg",
+    width: 595.28,
+    height: 841.89,
+    getElements: getSoftmuskCollaborationElements,
+  },
+  {
+    name: "Softmusk Technical Workshop Certificate",
+    backgroundUrl:
+      "https://res.cloudinary.com/dhbrorn46/image/upload/v1789025336/official_templates/softmusk_workshop_clean_bg.png",
+    localFallbackUrl: "/templates/softmusk-workshop-clean-bg.png",
+    backgroundPublicId: "official_templates/softmusk_workshop_clean_bg",
+    width: 595.28,
+    height: 841.89,
+    getElements: getSoftmuskWorkshopElements,
+  },
+];
 
 export async function POST(req: Request) {
   try {
@@ -344,46 +575,66 @@ export async function GET(req: Request) {
 
     let templates = await Template.find({ institutionId }).sort({ createdAt: -1 });
 
-    if (templates.length === 0 || reset) {
-      if (templates.length > 0 && reset) {
-        await Template.updateOne(
-          { _id: templates[0]._id },
-          {
-            backgroundUrl: "/templates/softmusk-template.png",
-            elements: getSoftmuskDefaultElements(),
-            width: 595.28,
-            height: 841.89,
-          }
-        );
-        templates = await Template.find({ institutionId }).sort({ createdAt: -1 });
-      } else {
-        const seeded = await Template.create({
+    // Ensure all 3 official templates exist and are upgraded with clean backgrounds
+    for (const official of OFFICIAL_TEMPLATES_CONFIG) {
+      const existing = await Template.findOne({
+        institutionId,
+        $or: [
+          { name: official.name },
+          ...(official.name.includes("Internship Certificate")
+            ? [{ name: "Softmusk Internship Certificate (Portrait A4)" }]
+            : []),
+        ],
+      });
+
+      if (!existing) {
+        await Template.create({
           institutionId,
-          name: "Softmusk Internship Certificate (Portrait A4)",
-          backgroundUrl: "/templates/softmusk-template.png",
-          backgroundPublicId: "softmusk_portrait_a4",
-          width: 595.28,
-          height: 841.89,
-          elements: getSoftmuskDefaultElements(),
+          name: official.name,
+          backgroundUrl: official.backgroundUrl,
+          backgroundPublicId: official.backgroundPublicId,
+          width: official.width,
+          height: official.height,
+          elements: official.getElements(),
           createdBy: user?._id || auth.userId,
         });
-        templates = [seeded];
-      }
-    } else {
-      // Migrate existing template: if it still has old element IDs (el_certify_title / missing el_reg_no), update elements
-      for (const tmpl of templates) {
-        const els = tmpl.elements as Array<Record<string, unknown>>;
-        const hasOldId = els.some((e) => e.id === "el_certify_title");
-        const hasRegNoEl = els.some((e) => e.id === "el_reg_no");
-        if (hasOldId || !hasRegNoEl) {
+      } else if (reset) {
+        await Template.updateOne(
+          { _id: existing._id },
+          {
+            $set: {
+              name: official.name,
+              backgroundUrl: official.backgroundUrl,
+              backgroundPublicId: official.backgroundPublicId,
+              width: official.width,
+              height: official.height,
+              elements: official.getElements(),
+            },
+          }
+        );
+      } else {
+        const els = (existing.elements || []) as Array<Record<string, unknown>>;
+        const hasOldLabel = els.some((e) => e.id === "el_certify_label");
+        const hasOldBg =
+          existing.backgroundUrl?.includes("softmusk-template.png") ||
+          existing.backgroundUrl?.includes("media_1788889318565");
+        if (hasOldLabel || hasOldBg) {
           await Template.updateOne(
-            { _id: tmpl._id },
-            { $set: { elements: getSoftmuskDefaultElements() } }
+            { _id: existing._id },
+            {
+              $set: {
+                name: official.name,
+                backgroundUrl: official.backgroundUrl,
+                backgroundPublicId: official.backgroundPublicId,
+                elements: official.getElements(),
+              },
+            }
           );
         }
       }
-      templates = await Template.find({ institutionId }).sort({ createdAt: -1 });
     }
+
+    templates = await Template.find({ institutionId }).sort({ createdAt: -1 });
 
     return NextResponse.json({ success: true, templates });
   } catch (err: unknown) {
