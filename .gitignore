@@ -41,5 +41,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# test outputs
+# test outputs and scratch
 scripts/test_output/
+scratch/
+test_*.png
+test_*.pdf
+official_*.png
+official_*.pdf
+*.crop.png

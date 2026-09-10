@@ -607,7 +607,7 @@ export default function CertificatesPage() {
   const handleDelete = async (certId: string, certNumber: string) => {
     if (!confirm(`Permanently delete certificate ${certNumber}?\n\nThis will remove it from the database AND delete the PDF and PNG from Cloudinary storage.\n\nThis action CANNOT be undone.`)) return;
     try {
-      const res = await fetch(`/api/certificates/${certId}/delete`, { method: "DELETE" });
+      const res = await fetch(`/api/certificates/${certId}`, { method: "DELETE" });
       if (res.ok) {
         info(`Certificate ${certNumber} permanently deleted`, "Deleted");
         fetchData();
