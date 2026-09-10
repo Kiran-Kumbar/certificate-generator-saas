@@ -461,7 +461,18 @@ export default function TemplateEditorPage() {
 
       if (tmplData.templates) {
         setTemplates(tmplData.templates);
-        if (tmplData.templates.length > 0 && !activeTemplate) {
+        if (typeof window !== "undefined") {
+          const urlParams = new URLSearchParams(window.location.search);
+          const requestedId = urlParams.get("id") || urlParams.get("templateId");
+          const target = requestedId
+            ? tmplData.templates.find((t: Template) => t._id === requestedId)
+            : null;
+          if (target) {
+            loadTemplateIntoEditor(target);
+          } else if (tmplData.templates.length > 0 && !activeTemplate) {
+            loadTemplateIntoEditor(tmplData.templates[0]);
+          }
+        } else if (tmplData.templates.length > 0 && !activeTemplate) {
           loadTemplateIntoEditor(tmplData.templates[0]);
         }
       }

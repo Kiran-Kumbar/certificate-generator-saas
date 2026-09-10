@@ -14,6 +14,7 @@ import {
   Sparkles,
   Menu,
   X,
+  Layers,
 } from "lucide-react";
 import { ToastProvider } from "@/components/ui/toast";
 
@@ -22,6 +23,7 @@ const navItems = [
   { name: "Certificates", href: "/dashboard/certificates", icon: Award },
   { name: "Setups & Form", href: "/dashboard/setups", icon: FileText },
   { name: "Template Editor", href: "/dashboard/templates", icon: FolderKanban },
+  { name: "Saved Designs", href: "/dashboard/designs", icon: Layers },
   { name: "Asset Library", href: "/dashboard/assets", icon: UploadCloud },
 ];
 
