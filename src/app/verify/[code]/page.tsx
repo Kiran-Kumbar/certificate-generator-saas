@@ -83,16 +83,31 @@ export default function VerificationPage({ params }: { params: Promise<{ code: s
         {/* Header - Softmusk Branding or Generic / Multi-tenant Branding */}
         {isSoftmusk ? (
           <div className="flex flex-col items-center text-center">
-            {/* Softmusk Circular Seal Logo */}
-            <div className="relative w-24 h-24 sm:w-28 sm:h-28 bg-white rounded-full p-1.5 border-2 border-slate-200 shadow-md flex items-center justify-center mb-3.5 group transition-transform hover:scale-105 overflow-hidden">
-              <Image
-                src="/softmusk-seal.png"
-                alt="Softmusk Info Pvt. Ltd. Official Seal"
-                width={110}
-                height={110}
-                className="w-full h-full object-contain rounded-full"
-                priority
-              />
+            {/* Dual Softmusk Circular Official Seals */}
+            <div className="flex items-center justify-center gap-3 sm:gap-4 mb-3.5">
+              {/* Belgaum Seal */}
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-full p-1 border-2 border-slate-200 shadow-md flex items-center justify-center group transition-transform hover:scale-105 overflow-hidden">
+                <Image
+                  src="/softmusk-seal-belgaum.png"
+                  alt="Softmusk Official Seal"
+                  width={96}
+                  height={96}
+                  className="w-full h-full object-contain rounded-full"
+                  priority
+                />
+              </div>
+
+              {/* Nipani Seal */}
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-full p-1 border-2 border-slate-200 shadow-md flex items-center justify-center group transition-transform hover:scale-105 overflow-hidden">
+                <Image
+                  src="/softmusk-seal-nipani.png"
+                  alt="Softmusk Official Seal"
+                  width={96}
+                  height={96}
+                  className="w-full h-full object-contain rounded-full"
+                  priority
+                />
+              </div>
             </div>
 
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 leading-tight">
@@ -185,18 +200,29 @@ export default function VerificationPage({ params }: { params: Promise<{ code: s
                 </div>
               </div>
 
-              {/* Official Seal / Stamp */}
-              <div className="shrink-0 flex items-center justify-center">
+              {/* Official Seals / Stamps */}
+              <div className="shrink-0 flex items-center justify-center gap-2">
                 {isSoftmusk ? (
-                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-emerald-600/30 bg-white p-1 shadow-xs flex items-center justify-center overflow-hidden">
-                    <Image
-                      src="/softmusk-seal.png"
-                      alt="Softmusk Official Seal"
-                      width={80}
-                      height={80}
-                      className="w-full h-full object-contain rounded-full"
-                    />
-                  </div>
+                  <>
+                    <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-emerald-600/30 bg-white p-0.5 shadow-xs flex items-center justify-center overflow-hidden">
+                      <Image
+                        src="/softmusk-seal-belgaum.png"
+                        alt="Softmusk Official Seal"
+                        width={64}
+                        height={64}
+                        className="w-full h-full object-contain rounded-full"
+                      />
+                    </div>
+                    <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-emerald-600/30 bg-white p-0.5 shadow-xs flex items-center justify-center overflow-hidden">
+                      <Image
+                        src="/softmusk-seal-nipani.png"
+                        alt="Softmusk Official Seal"
+                        width={64}
+                        height={64}
+                        className="w-full h-full object-contain rounded-full"
+                      />
+                    </div>
+                  </>
                 ) : (
                   <div className="scale-90 sm:scale-100">
                     <OfficialStamp
