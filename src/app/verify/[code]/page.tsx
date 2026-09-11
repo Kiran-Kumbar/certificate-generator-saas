@@ -7,9 +7,9 @@ import {
   XCircle,
   ShieldCheck,
   AlertTriangle,
-  MapPin,
   FileText,
   ExternalLink,
+  Award,
 } from "lucide-react";
 import OfficialStamp from "@/components/OfficialStamp";
 
@@ -79,16 +79,17 @@ export default function VerificationPage({ params }: { params: Promise<{ code: s
   return (
     <div className="min-h-screen bg-slate-50/70 flex flex-col justify-center items-center p-3 sm:p-6 py-6 sm:py-10 selection:bg-sky-100">
       <div className="w-full max-w-lg bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-7 shadow-xl space-y-5 sm:space-y-6">
+        
         {/* Header - Softmusk Branding or Generic / Multi-tenant Branding */}
         {isSoftmusk ? (
           <div className="flex flex-col items-center text-center">
             {/* Softmusk Circular Seal Logo */}
-            <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-full p-1 border-2 border-slate-200/90 shadow-sm flex items-center justify-center mb-3 group transition-transform hover:scale-105 overflow-hidden">
+            <div className="relative w-24 h-24 sm:w-28 sm:h-28 bg-white rounded-full p-1.5 border-2 border-slate-200 shadow-md flex items-center justify-center mb-3.5 group transition-transform hover:scale-105 overflow-hidden">
               <Image
                 src="/softmusk-seal.png"
                 alt="Softmusk Info Pvt. Ltd. Official Seal"
-                width={96}
-                height={96}
+                width={110}
+                height={110}
                 className="w-full h-full object-contain rounded-full"
                 priority
               />
@@ -101,15 +102,14 @@ export default function VerificationPage({ params }: { params: Promise<{ code: s
               Official Credential Verification Portal
             </p>
 
-            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mt-2 text-[11px] sm:text-xs text-slate-500">
-              <span className="inline-flex items-center gap-1 font-medium text-slate-600">
-                <MapPin size={12} className="text-rose-500 shrink-0" />
-                Belgaum, Karnataka 590006
-              </span>
-              <span className="text-slate-300">•</span>
-              <span className="inline-flex items-center gap-1 text-emerald-600 font-medium">
-                <ShieldCheck size={13} className="shrink-0" />
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mt-2.5 text-[11px] sm:text-xs">
+              <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full font-medium">
+                <ShieldCheck size={13} className="shrink-0 text-emerald-600" />
                 Authorized Issuer Registry
+              </span>
+              <span className="inline-flex items-center gap-1 text-sky-700 bg-sky-50 border border-sky-200/80 px-2.5 py-0.5 rounded-full font-medium">
+                <Award size={13} className="shrink-0 text-sky-600" />
+                Cryptographically Secured
               </span>
             </div>
           </div>
@@ -192,8 +192,8 @@ export default function VerificationPage({ params }: { params: Promise<{ code: s
                     <Image
                       src="/softmusk-seal.png"
                       alt="Softmusk Official Seal"
-                      width={76}
-                      height={76}
+                      width={80}
+                      height={80}
                       className="w-full h-full object-contain rounded-full"
                     />
                   </div>
@@ -321,7 +321,7 @@ export default function VerificationPage({ params }: { params: Promise<{ code: s
             )}
 
             {/* Cryptographic Verification Footer inside Card */}
-            <div className="pt-1 text-center space-y-1">
+            <div className="pt-2 text-center space-y-1">
               <p className="text-[11px] text-slate-500 flex items-center justify-center gap-1">
                 <ShieldCheck size={12} className="text-emerald-600 shrink-0" />
                 <span>SHA-256 Cryptographically Verified Credential</span>
@@ -332,17 +332,42 @@ export default function VerificationPage({ params }: { params: Promise<{ code: s
             </div>
           </div>
         )}
+
+        {/* Dedicated "Powered by Onqeva" badge INSIDE the card so it is always visible */}
+        <div className="pt-3 border-t border-slate-200/70 flex flex-col items-center justify-center gap-1.5">
+          <div className="flex items-center justify-center gap-2 w-full py-2 px-3 bg-gradient-to-r from-slate-50 via-sky-50/50 to-slate-50 border border-slate-200/90 rounded-xl shadow-2xs">
+            <span className="text-[11px] text-slate-500 font-medium">Verified &amp; Powered by</span>
+            <a
+              href="https://smc.onqeva.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 font-bold text-slate-800 hover:text-sky-600 text-xs transition-colors group"
+            >
+              <div className="w-5 h-5 relative rounded-md bg-white border border-slate-200 shadow-2xs flex items-center justify-center p-0.5 shrink-0 group-hover:border-sky-300 transition-colors">
+                <Image
+                  src="/onqeva-logo.png"
+                  alt="Onqeva Logo"
+                  width={16}
+                  height={16}
+                  className="object-contain"
+                />
+              </div>
+              <span className="tracking-tight text-slate-900 font-bold">Onqeva</span>
+              <span className="text-[10px] text-sky-700 font-semibold bg-sky-100/90 px-1.5 py-0.5 rounded-md">Credential SaaS</span>
+            </a>
+          </div>
+        </div>
       </div>
 
-      {/* External Footer with Powered by Onqeva */}
+      {/* External Footer */}
       <footer className="mt-7 text-center text-xs text-slate-400 flex flex-col items-center gap-1.5 px-4">
-        <div className="inline-flex items-center gap-1.5 text-slate-500 text-[11px] sm:text-xs">
+        <div className="inline-flex items-center gap-1.5 text-slate-600 text-[11px] sm:text-xs font-medium">
           <span>Powered by</span>
           <a
             href="https://smc.onqeva.in"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-slate-700 hover:text-sky-600 transition-colors inline-flex items-center gap-1"
+            className="font-bold text-slate-800 hover:text-sky-600 transition-colors inline-flex items-center gap-1"
           >
             <Image
               src="/onqeva-logo.png"
@@ -351,12 +376,12 @@ export default function VerificationPage({ params }: { params: Promise<{ code: s
               height={14}
               className="object-contain inline-block"
             />
-            Onqeva
+            Onqeva Credential Network
           </a>
         </div>
         <p className="text-[10px] text-slate-400">
           Multi-Tenant Cryptographic Authenticity Network •{" "}
-          <a href="https://smc.onqeva.in" target="_blank" rel="noopener noreferrer" className="hover:underline">
+          <a href="https://smc.onqeva.in" target="_blank" rel="noopener noreferrer" className="hover:underline text-slate-500 font-medium">
             smc.onqeva.in
           </a>
         </p>
